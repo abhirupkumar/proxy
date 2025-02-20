@@ -6,17 +6,19 @@ import { useUserDetail } from '@/context/UserDetailContext';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
 import { ArrowRight, Link } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
-import SignInDialog from '../sign-in-dialog';
+// import SignInDialog from '../sign-in-dialog';
 
-const Hero = () => {
+const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
     const { messages, setMessages } = useMessages();
-    const { userDetail, setUserDetail } = useUserDetail();
+    // const { userDetail, setUserDetail } = useUserDetail();
     const [openDialog, setOpenDialog] = useState(false);
+    const router = useRouter();
     const onGenerate = (input: string) => {
-        if (!userDetail?.name) {
-            setOpenDialog(true);
+        if (!user) {
+            router.push('/sign-in');
             return;
         }
         setMessages({
@@ -45,13 +47,13 @@ const Hero = () => {
             </div>
             <div className='flex mt-8 flex-wrap max-w2xl items-center justify-center gap-3 text-muted-foreground'>
                 {Lookup?.SUGGSTIONS.map((suggestion, index) => (
-                    <h2
+                    <button
                         key={index}
                         onClick={() => onGenerate(suggestion)}
-                        className='p-1 px-2 border rounded-full text-sm'>{suggestion}</h2>
+                        className='p-1 px-2 border rounded-full text-sm'>{suggestion}</button>
                 ))}
             </div>
-            <SignInDialog openDialog={openDialog} closeDialog={() => setOpenDialog(false)} />
+            {/* <SignInDialog openDialog={openDialog} closeDialog={() => setOpenDialog(false)} /> */}
         </div>
     )
 }

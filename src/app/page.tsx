@@ -1,10 +1,11 @@
 import Hero from "@/components/custom/hero";
-import Image from "next/image";
+import { getUser } from "@/lib/queries";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getUser();
   return (
-    <div>
-      <Hero />
-    </div>
+    <>
+      <Hero user={user} />
+    </>
   );
 }

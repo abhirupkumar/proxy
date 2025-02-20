@@ -14,31 +14,31 @@ export function ThemeProvider({
     ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
 
-    const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    // const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-    useEffect(() => {
-        IsAuthenticated();
-    }, []);
+    // useEffect(() => {
+    //     IsAuthenticated();
+    // }, []);
 
-    const IsAuthenticated = async () => {
-        if (typeof window !== 'undefined') {
-            const user = JSON.parse(localStorage.getItem('user') ?? "");
-            const result = await convex.query(api.users.GetUser, {
-                email: user?.email
-            })
-            console.log(result);
-        }
-    }
+    // const IsAuthenticated = async () => {
+    //     if (typeof window !== 'undefined') {
+    //         const user = JSON.parse(localStorage.getItem('user') ?? "");
+    //         const result = await convex.query(api.users.GetUser, {
+    //             email: user?.email
+    //         })
+    //         console.log(result);
+    //     }
+    // }
 
     return <ClerkProvider>
-        <ConvexProvider client={convex}>
-            <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_AUTH_KEY!}>.
-                <UserDetailProvider>
-                    <MessagesProvider>
-                        <NextThemesProvider {...props}>{children}</NextThemesProvider>
-                    </MessagesProvider>
-                </UserDetailProvider>
-            </GoogleOAuthProvider>
-        </ConvexProvider>
+        {/* <ConvexProvider client={convex}> */}
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_AUTH_KEY!}>.
+            <UserDetailProvider>
+                <MessagesProvider>
+                    <NextThemesProvider {...props}>{children}</NextThemesProvider>
+                </MessagesProvider>
+            </UserDetailProvider>
+        </GoogleOAuthProvider>
+        {/* </ConvexProvider> */}
     </ClerkProvider>
 }
