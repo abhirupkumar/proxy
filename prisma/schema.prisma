@@ -14,10 +14,19 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  clerkId   String   @unique
-  email     String   @unique
-  firstname String?  @unique
-  lastname  String?  @unique
-  createdAt DateTime @default(now())
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerkId    String      @unique
+  email      String      @unique
+  firstname  String?
+  lastname   String?
+  createdAt  DateTime    @default(now())
+  workspaces Workspace[]
+}
+
+model Workspace {
+  id       String @id @default(uuid())
+  message  Json
+  fileData Json?
+  userId   String @db.Uuid
+  User     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
