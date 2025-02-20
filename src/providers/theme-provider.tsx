@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ConvexProvider, ConvexReactClient } from "convex/react";
 import { api } from '../../convex/_generated/api'
 import { ClerkProvider } from '@clerk/nextjs'
+import { dark } from '@clerk/themes'
 
 export function ThemeProvider({
     children,
@@ -30,7 +31,7 @@ export function ThemeProvider({
     //     }
     // }
 
-    return <ClerkProvider>
+    return <ClerkProvider appearance={{ baseTheme: dark }}>
         {/* <ConvexProvider client={convex}> */}
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_AUTH_KEY!}>.
             <UserDetailProvider>
