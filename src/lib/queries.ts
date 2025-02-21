@@ -43,3 +43,17 @@ export const createWorkspace = async (messages: any, user: any) => {
         return null;
     }
 }
+
+export const getWorkspace = async (id: any) => {
+    try {
+        const workspace = await db.workspace.findUnique({
+            where: {
+                id: id,
+            },
+        });
+        return workspace;
+    }
+    catch (error: any) {
+        return null;
+    }
+}

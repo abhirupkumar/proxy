@@ -1,8 +1,6 @@
 "use client";
 
-import { Textarea } from '@/components/ui/textarea';
 import { useMessages } from '@/context/MessagesContext';
-import { useUserDetail } from '@/context/UserDetailContext';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
 import { createWorkspace } from '@/lib/queries';
@@ -13,7 +11,6 @@ import React, { useState } from 'react'
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
     const { messages, setMessages } = useMessages();
-    // const { userDetail, setUserDetail } = useUserDetail();
     const router = useRouter();
     const onGenerate = async (input: string) => {
         if (!user) {

@@ -2,14 +2,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Define the type for the messages context
 interface MessagesContextType {
-    messages: {
-        role: 'user' | 'bot';
-        content: string;
-    } | null;
-    setMessages: React.Dispatch<React.SetStateAction<{
-        role: 'user' | 'bot';
-        content: string;
-    } | null>>;
+    messages: any;
+    setMessages: React.Dispatch<React.SetStateAction<any>>;
 }
 
 // Create the context with default values
@@ -17,10 +11,7 @@ const MessagesContext = createContext<MessagesContextType | undefined>(undefined
 
 // Define the provider component
 export const MessagesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [messages, setMessages] = useState<{
-        role: 'user' | 'bot';
-        content: string;
-    } | null>(null);
+    const [messages, setMessages] = useState<any>(null);
 
     return (
         <MessagesContext.Provider value={{ messages, setMessages }}>
