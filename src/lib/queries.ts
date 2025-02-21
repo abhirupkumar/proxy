@@ -28,3 +28,18 @@ export const getUser = async () => {
         return null;
     }
 }
+
+export const createWorkspace = async (messages: any, user: any) => {
+    try {
+        const workspace = await db.workspace.create({
+            data: {
+                message: [messages],
+                userId: user.id,
+            },
+        });
+        return workspace;
+    }
+    catch (error: any) {
+        return null;
+    }
+}

@@ -5,18 +5,17 @@ import { useMessages } from '@/context/MessagesContext';
 import { useUserDetail } from '@/context/UserDetailContext';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
+import { createWorkspace } from '@/lib/queries';
 import { ArrowRight, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
-// import SignInDialog from '../sign-in-dialog';
 
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
     const { messages, setMessages } = useMessages();
     // const { userDetail, setUserDetail } = useUserDetail();
-    const [openDialog, setOpenDialog] = useState(false);
     const router = useRouter();
-    const onGenerate = (input: string) => {
+    const onGenerate = async (input: string) => {
         if (!user) {
             router.push('/sign-in');
             return;
@@ -25,6 +24,11 @@ const Hero = ({ user }: { user: any }) => {
             role: 'user',
             content: input
         })
+        if (messages) {
+            const workspace = await createWorkspace(messages, user);
+            if (workspace)
+                router.push(`/workspace/${workspace.id}`);
+        }
     }
 
     return (
@@ -53,7 +57,6 @@ const Hero = ({ user }: { user: any }) => {
                         className='p-1 px-2 border rounded-full text-sm'>{suggestion}</button>
                 ))}
             </div>
-            {/* <SignInDialog openDialog={openDialog} closeDialog={() => setOpenDialog(false)} /> */}
         </div>
     )
 }
