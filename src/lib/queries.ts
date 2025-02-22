@@ -57,3 +57,21 @@ export const getWorkspace = async (id: any) => {
         return null;
     }
 }
+
+export const updateWorkspace = async (id: any, messages: any) => {
+    console.log(messages)
+    try {
+        const workspace = await db.workspace.update({
+            where: {
+                id: id,
+            },
+            data: {
+                message: messages,
+            },
+        })
+        return workspace;
+    }
+    catch (error: any) {
+        return null;
+    }
+}

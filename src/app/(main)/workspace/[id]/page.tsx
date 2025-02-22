@@ -15,7 +15,7 @@ const Workspace = async ({ params }: { params: Promise<{ id: string }> }) => {
         <div className='md:p-10 p-5'>
             <div className='grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-10'>
                 <ChatView workspace={workspace} />
-                <div className='col-span-1'>
+                <div className='md:col-span-1 lg:col-span-2'>
                     <CodeView />
                 </div>
             </div>

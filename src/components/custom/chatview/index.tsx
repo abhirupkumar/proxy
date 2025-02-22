@@ -12,6 +12,8 @@ import Image from 'next/image';
 import React, { useEffect, useState } from 'react'
 import axios from 'axios';
 import { Message } from 'postcss';
+import { updateWorkspace } from '@/lib/queries';
+import ReactMarkdown from "react-markdown";
 
 const ChatView = ({ workspace }: { workspace: Workspace }) => {
     const { messages, setMessages } = useMessages();
@@ -31,12 +33,13 @@ const ChatView = ({ workspace }: { workspace: Workspace }) => {
         }
     }, [messages]);
 
-    const onGenerate = (content: string) => {
+    const onGenerate = async (content: string) => {
         setMessages((prev: Message[]) => [...prev, {
             role: 'user',
             content: content
         }])
         setUserInput('');
+        await updateWorkspace(workspace.id, messages);
     }
 
     const getAiResponse = async () => {
@@ -63,10 +66,11 @@ const ChatView = ({ workspace }: { workspace: Workspace }) => {
             botMessage += decoder.decode(value, { stream: true });
 
             setMessages((prev: any) => [
-                ...(prev[prev.length - 1]?.role == 'ai' ? prev.slice(0, prev.length - 1) : prev),
-                { role: "ai", content: botMessage },
+                ...(prev[prev.length - 1]?.role == 'system' ? prev.slice(0, prev.length - 1) : prev),
+                { role: "system", content: botMessage },
             ]);
         }
+        await updateWorkspace(workspace.id, [...messages, { role: "system", content: botMessage }]);
     }
 
     return (
@@ -79,7 +83,9 @@ const ChatView = ({ workspace }: { workspace: Workspace }) => {
                         {!isLoaded && <Skeleton className="h-[35px] w-[35px] rounded-full" />}
                         {isLoaded && message?.role == 'user' && <Image src={user?.imageUrl!} width={35} height={35} alt="avatar" className='rounded-full' />}
                         {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
-                        <h2>{message.content}</h2>
+                        <div className="whitespace-pre-wrap">
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                        </div>
                     </div>))}
                 {loading && <div className='flex gap-2 items-start rounded-lg p-3 mb-2' style={{
                     backgroundColor: Colors.CHAT_BACKGROUND,

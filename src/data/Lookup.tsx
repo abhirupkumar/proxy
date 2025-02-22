@@ -26,8 +26,7 @@ export default {
 </html>`
     },
     '/App.css': {
-      code: `
-            @tailwind base;
+      code: `@tailwind base;
 @tailwind components;
 @tailwind utilities;`
     },
@@ -57,10 +56,9 @@ export default config;
     }
   },
   DEPENDANCY: {
-
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    autoprefixer: "^10.0.0",
+    "autoprefixer": "^10.0.0",
     "uuid4": "^2.0.3",
     "tailwind-merge": "^2.4.0",
     "tailwindcss-animate": "^1.0.7",
@@ -102,7 +100,107 @@ export default config;
       desc: 'Designed for professionals who need to use Proxy a few times per week.',
       price: 49.99
     }
-  ]
+  ],
+
+  CUSTOM_SETUP: {
+    files: {
+      "/index.html": {
+        code: `<!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="UTF-8" />
+      <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>Vite + React</title>
+    </head>
+    <body>
+      <div id="root"></div>
+      <script type="module" src="/src/main.jsx"></script>
+    </body>
+  </html>`,
+      },
+      "/src/main.jsx": {
+        code: `import { StrictMode } from "react";
+  import { createRoot } from "react-dom/client";
+  import App from "./App";
+  import "./index.css";
+  
+  createRoot(document.getElementById("root")).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  );`,
+      },
+      "/src/App.jsx": {
+        code: `import React from "react";
+  
+  function App() {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <p className="text-lg text-gray-800">Start prompting (or editing) to see magic happen :)</p>
+      </div>
+    );
+  }
+  
+  export default App;`,
+      },
+      "/src/index.css": {
+        code: `@tailwind base;
+  @tailwind components;
+  @tailwind utilities;`,
+      },
+      "/vite.config.js": {
+        code: `import { defineConfig } from "vite";
+  import react from "@vitejs/plugin-react";
+  
+  export default defineConfig({
+    plugins: [react()],
+  });`,
+      },
+      "/package.json": {
+        code: `{
+    "name": "vite-react-starter",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    },
+    "dependencies": {
+      "react": "^18.3.1",
+      "react-dom": "^18.3.1"
+    },
+    "devDependencies": {
+      "@vitejs/plugin-react": "^4.3.1",
+      "autoprefixer": "^10.4.18",
+      "postcss": "^8.4.35",
+      "tailwindcss": "^3.4.1",
+      "vite": "^5.4.2"
+    }
+  }`,
+      },
+      "/tailwind.config.js": {
+        code: `export default {
+    content: ["./index.html", "./src/**/*.{js,jsx}"],
+    theme: {
+      extend: {},
+    },
+    plugins: [],
+  };`,
+      },
+      "/postcss.config.js": {
+        code: `export default {
+    plugins: {
+      tailwindcss: {},
+      autoprefixer: {},
+    },
+  };`,
+      },
+    },
+    template: "vite-react",
+  }
 
 
 }
