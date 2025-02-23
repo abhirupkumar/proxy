@@ -21,7 +21,12 @@ const CodeView = () => {
                     <button onClick={() => setActiveTab('preview')} className={`text-sm py-1 px-2 ${activeTab == 'preview' && 'text-blue-500 bg-blue-500 bg-opacity-25 rounded-full'}`}>Preview</button>
                 </div>
             </div>
-            <SandpackProvider template='react' theme={'dark'}>
+            <SandpackProvider
+                files={Lookup.CUSTOM_SETUP.files}
+                customSetup={{
+                    entry: '/src/main.jsx',
+                }}
+                theme={'dark'}>
                 <SandpackLayout>
                     {activeTab == 'code' ? <>
                         <SandpackFileExplorer style={{ height: '80vh' }} />
@@ -35,7 +40,8 @@ const CodeView = () => {
                     </>
                         :
                         <>
-                            <SandpackPreview style={{ height: '80vh' }} showNavigator={true} showRefreshButton={true} showSandpackErrorOverlay={true} showOpenInCodeSandbox={false} showOpenNewtab={true} />
+                            <SandpackPreview style={{ height: '80vh' }} showNavigator={true} showRefreshButton={true} showSandpackErrorOverlay={true}
+                                showOpenNewtab={true} />
                         </>}
                     {/* <SandpackConsole /> */}
                 </SandpackLayout>

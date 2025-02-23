@@ -120,29 +120,29 @@ export default config;
   </html>`,
       },
       "/src/main.jsx": {
-        code: `import { StrictMode } from "react";
-  import { createRoot } from "react-dom/client";
-  import App from "./App";
-  import "./index.css";
-  
-  createRoot(document.getElementById("root")).render(
-    <StrictMode>
-      <App />
-    </StrictMode>
-  );`,
+        code: `import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);`,
       },
       "/src/App.jsx": {
         code: `import React from "react";
   
-  function App() {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-lg text-gray-800">Start prompting (or editing) to see magic happen :)</p>
-      </div>
-    );
-  }
+function App() {
+  return (
+    <div className="min-h-screen bg-blue-300 flex items-center justify-center">
+      <p className="text-xl text-red-500">Start prompting (or editing) to see magic happen :)</p>
+    </div>
+  );
+}
   
-  export default App;`,
+export default App;`,
       },
       "/src/index.css": {
         code: `@tailwind base;
@@ -151,9 +151,9 @@ export default config;
       },
       "/vite.config.js": {
         code: `import { defineConfig } from "vite";
-  import react from "@vitejs/plugin-react";
+import react from "@vitejs/plugin-react";
   
-  export default defineConfig({
+export default defineConfig({
     plugins: [react()],
   });`,
       },
@@ -173,6 +173,8 @@ export default config;
       "react-dom": "^18.3.1"
     },
     "devDependencies": {
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.1",
       "@vitejs/plugin-react": "^4.3.1",
       "autoprefixer": "^10.4.18",
       "postcss": "^8.4.35",
@@ -183,7 +185,7 @@ export default config;
       },
       "/tailwind.config.js": {
         code: `export default {
-    content: ["./index.html", "./src/**/*.{js,jsx}"],
+    content: ["./index.html", "./src/**/*.{js,jsx, ts, tsx}"],
     theme: {
       extend: {},
     },
