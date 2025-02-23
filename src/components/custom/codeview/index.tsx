@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     SandpackProvider,
     SandpackLayout,
@@ -10,9 +10,35 @@ import {
     SandpackConsole,
 } from "@codesandbox/sandpack-react";
 import Lookup from '@/data/Lookup';
+import axios from 'axios';
+import { useMessages } from '@/context/MessagesContext';
+import Prompt from '@/data/Prompt';
 
 const CodeView = () => {
+
     const [activeTab, setActiveTab] = useState('code');
+    const [files, setFiles] = useState<Record<string, { code: string }>>(Lookup.DEFAULT_FILE)
+    const { messages, setMessages } = useMessages();
+
+    useEffect(() => {
+        if (messages?.length > 0) {
+            const role = messages[messages?.length - 1].role;
+            if (role == 'user')
+                generateAiCode();
+        }
+    }, [messages])
+
+    const generateAiCode = async () => {
+        const result = await axios.post('/api/gen-ai-code', {
+            prompt: messages,
+            systemPrompt: Prompt.CODE_GEN_PROMPT
+        })
+        const response = result.data.data
+        const mergedFiles = { ...Lookup.DEFAULT_FILE, ...response?.files }
+        setFiles(mergedFiles);
+        console.log(mergedFiles)
+    }
+
     return (
         <div>
             <div className='bg-[#181818] w-full p-2 border'>
@@ -22,10 +48,8 @@ const CodeView = () => {
                 </div>
             </div>
             <SandpackProvider
-                files={Lookup.CUSTOM_SETUP.files}
-                customSetup={{
-                    entry: '/src/main.jsx',
-                }}
+                files={files ?? Lookup.DEFAULT_FILE}
+                template='react'
                 theme={'dark'}>
                 <SandpackLayout>
                     {activeTab == 'code' ? <>
