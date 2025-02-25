@@ -48,8 +48,8 @@ const CodeView = () => {
                 </div>
             </div>
             <SandpackProvider
-                files={files ?? Lookup.DEFAULT_FILE}
-                template='react'
+                files={files}
+                template='vite-react'
                 theme={'dark'}>
                 <SandpackLayout>
                     {activeTab == 'code' ? <>
