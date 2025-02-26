@@ -16,7 +16,11 @@ export function Provider({
 
     return <ClerkProvider appearance={{ baseTheme: dark }}>
         <MessagesProvider>
-            <NextThemesProvider {...props}>
+            <NextThemesProvider //dark mode
+                attribute="class"
+                defaultTheme="dark"
+                disableTransitionOnChange
+            >
                 <Header />
                 <SidebarProvider>
                     <AppSidebar />

@@ -21,7 +21,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${font.className}`}
+        className={`${font.className} overflow-hidden`}
       >
         <Provider>
           {children}

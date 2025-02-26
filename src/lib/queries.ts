@@ -51,7 +51,24 @@ export const getWorkspace = async (id: any) => {
                 id: id,
             },
         });
+        console.log(id)
         return workspace;
+    }
+    catch (error: any) {
+        return null;
+    }
+}
+
+export const getAllWorkspaces = async (userId: string) => {
+    try {
+        const workspaces = await db.workspace.findMany({
+            where: {
+                User: {
+                    clerkId: userId,
+                }
+            },
+        });
+        return workspaces;
     }
     catch (error: any) {
         return null;

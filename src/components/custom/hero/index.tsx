@@ -29,7 +29,7 @@ const Hero = ({ user }: { user: any }) => {
     }
 
     return (
-        <div className='flex flex-col items-center mt-36 xl:mt-52 gap-2' suppressHydrationWarning>
+        <div className='flex flex-col flex-1 items-center mt-36 xl:mt-52 gap-2 overflow-hidden px-6' suppressHydrationWarning>
             <h2 className='font-bold text-4xl'>{Lookup.HERO_HEADING}</h2>
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
             <div className='p-5 border rounded-xl max-w-2xl w-full mt-3'
