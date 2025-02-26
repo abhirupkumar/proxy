@@ -1,4 +1,3 @@
-import Prompt from '@/data/Prompt';
 import { groq } from '@/lib/groq';
 import { NextRequest, NextResponse } from 'next/server';
 
