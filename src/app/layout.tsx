@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Nova_Square, Roboto_Mono } from "next/font/google";
+import { Roboto_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/providers/theme-provider";
-import Header from "@/components/custom/header";
-import Layout from "@/components/custom/layout";
+import { Provider } from "@/providers";
 
 export const metadata: Metadata = {
   title: "Proxy",
@@ -23,11 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={``}
+        className={`${font.className}`}
       >
-        <Layout>
+        <Provider>
           {children}
-        </Layout>
+        </Provider>
       </body>
     </html>
   );

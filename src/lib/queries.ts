@@ -75,3 +75,17 @@ export const updateWorkspace = async (id: any, messages: any) => {
         return null;
     }
 }
+
+export const deleteWorkspace = async (id: any) => {
+    try {
+        const workspace = await db.workspace.delete({
+            where: {
+                id: id,
+            },
+        });
+        return workspace;
+    }
+    catch (error: any) {
+        return null;
+    }
+}

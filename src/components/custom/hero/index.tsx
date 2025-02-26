@@ -4,27 +4,27 @@ import { useMessages } from '@/context/MessagesContext';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
 import { createWorkspace } from '@/lib/queries';
-import { ArrowRight, Link } from 'lucide-react';
+import { ArrowRight, Circle, Link, Loader2, Square } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
+import ButtonLoader from '../button-loader';
 
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
-    const { messages, setMessages } = useMessages();
+    const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
     const onGenerate = async (input: string) => {
+        setUserInput(input)
         if (!user) {
             router.push('/sign-in');
             return;
         }
-        setMessages({
-            role: 'user',
-            content: input
-        })
+        setLoading(true);
+        const messages = { role: "user", content: userInput }
         if (messages) {
             const workspace = await createWorkspace(messages, user);
             if (workspace)
-                router.push(`/workspace/${workspace.id}`);
+                router.replace(`/workspace/${workspace.id}`);
         }
     }
 
@@ -37,10 +37,11 @@ const Hero = ({ user }: { user: any }) => {
                     backgroundColor: Colors.BACKGROUND
                 }}>
                 <div className='flex gap-2'>
-                    <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(event) => setUserInput(event.target.value)} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
-                    {userInput && <ArrowRight
+                    <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(event) => setUserInput(event.target.value)} value={userInput || ""} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
+                    {!loading && userInput && <ArrowRight
                         onClick={() => onGenerate(userInput)}
                         className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />}
+                    {loading && <ButtonLoader />}
                 </div>
                 <div>
                     <Link className='h-5 w-5' />
