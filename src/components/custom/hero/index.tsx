@@ -32,10 +32,7 @@ const Hero = ({ user }: { user: any }) => {
         <div className='flex flex-col flex-1 items-center mt-36 xl:mt-52 gap-2 overflow-hidden px-6' suppressHydrationWarning>
             <h2 className='font-bold text-4xl'>{Lookup.HERO_HEADING}</h2>
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
-            <div className='p-5 border rounded-xl max-w-2xl w-full mt-3'
-                style={{
-                    backgroundColor: Colors.BACKGROUND
-                }}>
+            <div className='p-5 border rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
                 <div className='flex gap-2'>
                     <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(event) => setUserInput(event.target.value)} value={userInput || ""} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
                     {!loading && userInput && <ArrowRight

@@ -23,7 +23,11 @@ export default function RootLayout({
       <body
         className={`${font.className} overflow-hidden`}
       >
-        <Provider>
+        <Provider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange>
           {children}
         </Provider>
       </body>

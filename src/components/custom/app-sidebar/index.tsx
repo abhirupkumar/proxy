@@ -1,11 +1,12 @@
 import { Button, buttonVariants } from '@/components/ui/button';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarRail, useSidebar } from '@/components/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarRail, useSidebar } from '@/components/ui/sidebar';
 import { MessageCircle, PanelsLeftBottom } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'
 import WorkspaceHistory from '../workspace-history';
 import ToggleSidebar from '../toggle-sidebar';
+import SidebarFooterComponent from '../SidebarFooterComponent';
 
 const AppSidebar = () => {
     const { toggleSidebar } = useSidebar();
@@ -19,10 +20,17 @@ const AppSidebar = () => {
             <SidebarContent className='p-5'>
                 <Link href='/' onClick={toggleSidebar} className={buttonVariants()}> <MessageCircle /> Start New Chat</Link>
                 <SidebarGroup />
-                <WorkspaceHistory />
+                <SidebarGroupLabel>Your Chats</SidebarGroupLabel>
+                <SidebarGroupContent>
+                    <SidebarMenu>
+                        <WorkspaceHistory />
+                    </SidebarMenu>
+                </SidebarGroupContent>
                 <SidebarGroup />
             </SidebarContent>
-            <SidebarFooter />
+            <SidebarFooter>
+                <SidebarFooterComponent />
+            </SidebarFooter>
             <SidebarRail className='mt-auto h-fit'>
                 <ToggleSidebar />
             </SidebarRail>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useSidebar } from '@/components/ui/sidebar';
+import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { getAllWorkspaces, getWorkspace } from '@/lib/queries';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -24,17 +24,18 @@ const WorkspaceHistory = () => {
     }
 
     return (
-        <div>
-            <h2 className='font-medium text-lg'>Your Chats</h2>
-            <div className='flex flex-col'>
-                {workspaceList && workspaceList?.map((workspace: any, index: number) => {
-                    return (
-                        <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} key={index} className='text-sm text-gray-400 mt-2 font-black hover:bg-background/20 py-1 px-2 rounded-full hover:text-gray-200 w-full text-left'>
-                            {workspace.message[0].content || "New Chat"}
-                        </Link>
-                    )
-                })}
-            </div>
+        <div className='flex flex-col'>
+            {workspaceList && workspaceList?.map((workspace: any, index: number) => {
+                return (
+                    <SidebarMenuItem key={index}>
+                        <SidebarMenuButton asChild>
+                            <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className=''>
+                                {workspace.message[0].content || "New Chat"}
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                )
+            })}
         </div>
     )
 }
