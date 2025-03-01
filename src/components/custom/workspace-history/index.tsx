@@ -18,7 +18,6 @@ const WorkspaceHistory = () => {
     }, [isSignedIn, user])
 
     const getAllWorkspacesFromClient = async () => {
-        console.log(user?.id)
         const workspaces = await getAllWorkspaces(user?.id!);
         setWorkspaceList(workspaces)
     }

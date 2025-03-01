@@ -20,7 +20,7 @@ const Hero = ({ user }: { user: any }) => {
             return;
         }
         setLoading(true);
-        const messages = { role: "user", content: userInput }
+        const messages = { role: "user", content: input }
         if (messages) {
             const workspace = await createWorkspace(messages, user);
             if (workspace)

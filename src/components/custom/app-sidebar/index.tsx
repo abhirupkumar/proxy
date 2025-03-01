@@ -16,7 +16,8 @@ const AppSidebar = () => {
         <Sidebar collapsible="offcanvas" >
             <SidebarHeader className='p-5'>
                 <Link href="/">
-                    <Image src={theme == 'dark' ? "/logo-dark.svg" : "/logo-white.svg"} alt="Logo" width={100} height={100} />
+                    {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
+                        <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} />}
                 </Link>
             </SidebarHeader>
             <SidebarContent className='p-5'>

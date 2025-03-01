@@ -2,24 +2,18 @@ import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
 import { groq } from '@/lib/groq';
+import { parseXml } from '@/lib/parse';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-    const { prompt } = await req.json();
-
-    const messages = [
-        ...prompt,
-        {
-            role: 'system', content: getSystemPrompt()
-        }
-    ]
+    const { messages } = await req.json();
 
     try {
         const result = await gemini.generateContent({
-            contents: messages,  // Directly passing the user messages
-            safetySettings: [],
+            contents: messages,
             generationConfig: {
                 maxOutputTokens: 8000,
+                responseMimeType: "application/json"
             },
             systemInstruction: {
                 role: "system",
@@ -33,6 +27,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ response: text }, { status: 200 })
     }
     catch (error: any) {
+        console.log(error);
         return NextResponse.json({ error: error }, { status: 500 });
     }
 }

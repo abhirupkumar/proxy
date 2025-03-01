@@ -10,7 +10,8 @@ const Header = () => {
     return (
         <div className='p-4 flex justify-between items-center'>
             <Link href="/">
-                <Image src={theme == 'dark' ? "/logo-dark.svg" : "/logo-white.svg"} alt="Logo" width={100} height={100} />
+                {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
+                    <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} />}
             </Link>
             <div className='flex gap-3'>
                 <SignedIn>

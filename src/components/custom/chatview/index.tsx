@@ -4,7 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMessages } from '@/context/MessagesContext';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
-import Prompt from '@/data/Prompt';
+// import Prompt from '@/data/Prompt';
 import { useUser } from '@clerk/nextjs';
 import { Workspace } from '@prisma/client';
 import { ArrowRight, Bot, Link, Loader2 } from 'lucide-react';
@@ -49,7 +49,7 @@ const ChatView = ({ workspace }: { workspace: Workspace }) => {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 prompt: messages,
-                systemPrompt: Prompt.CHAT_PROMPT
+                // systemPrompt: Prompt.CHAT_PROMPT
             }),
         });
         if (!response.body) return;
