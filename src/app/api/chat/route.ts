@@ -12,8 +12,7 @@ export async function POST(req: NextRequest) {
         const result = await gemini.generateContent({
             contents: messages,
             generationConfig: {
-                maxOutputTokens: 8000,
-                responseMimeType: "application/json"
+                maxOutputTokens: 8000
             },
             systemInstruction: {
                 role: "system",

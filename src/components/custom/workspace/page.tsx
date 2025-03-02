@@ -28,9 +28,11 @@ export default Component;`;
 const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
     const prompt = workspace.message[0].content;
     const { messages, setMessages } = useMessages();
+    const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
     const [userInput, setUserInput] = useState<string>('');
     const { isSignedIn, user, isLoaded } = useUser();
     const [loading, setLoading] = useState<boolean>(false);
+    const [steps, setSteps] = useState<Step[]>([]);
 
     useEffect(() => {
         setMessages(workspace.message);
@@ -39,9 +41,9 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
     useEffect(() => {
         if (messages?.length > 0) {
             const role = messages[messages?.length - 1].role;
-            // if (role == 'user')
+            if (role == 'user')
+                check();
             //     getAiResponse();
-            check();
         }
     }, [messages]);
 
@@ -52,19 +54,42 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
         });
 
         const { prompts, uiPrompts } = res.data;
+
+        setSteps(parseXml(uiPrompts[0]).map((x: Step) => ({
+            ...x,
+            status: "pending"
+        })));
+
         const response = await axios.post('/api/chat', {
             messages: [...prompts, prompt].map(content => ({
                 role: "user",
                 parts: [{ text: content }]
             }))
         });
-        console.log(response.data.response)
-        const data = JSON.parse(response.data.response)
-        const files = ReactBasePrompt.files
-        const mergedFiles: any = { ...files, ...data.files }
-        console.log(mergedFiles)
+
+        setSteps(s => [...s, ...parseXml(response.data.response).map(x => ({
+            ...x,
+            status: "pending" as "pending"
+        }))]);
+        setLlmMessages([...prompts, prompt].map(content => ({
+            role: "user",
+            content
+        })));
+        setLlmMessages(x => [...x, { role: "assistant", content: response.data.response }])
+        const aiResponses = steps.filter(x => x.type == 0).sort((a, b) => a.id - b.id);
+        const stepsWithoutResponses = steps.filter(x => x.type != 0)
+        const newMessage = `
+        ${aiResponses.length > 0 && aiResponses[0]}
+        ${stepsWithoutResponses.length > 0 && '\nSteps:\n' + stepsWithoutResponses.map((step: Step) => step.title + "\n")}
+        ${aiResponses.length > 1 && aiResponses[1]}
+        `
+        setMessages((prev: Message[]) => [...prev, {
+            role: 'assistant',
+            content: newMessage
+        }])
         setLoading(false);
     }
+
 
     const onGenerate = async (content: string) => {
         setMessages((prev: Message[]) => [...prev, {

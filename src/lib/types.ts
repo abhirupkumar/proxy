@@ -1,4 +1,5 @@
 export enum StepType {
+    AiResponse,
     CreateFile,
     CreateFolder,
     EditFile,

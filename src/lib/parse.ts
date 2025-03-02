@@ -54,17 +54,26 @@ export function parseXml(response: string): Step[] {
     });
 
     // Regular expression to find proxyAction elements
-    const actionRegex = /<proxyAction\s+type="([^"]*)"(?:\s+filePath="([^"]*)")?>([\s\S]*?)<\/proxyAction>/g;
+    const actionRegex = /<proxyAction\s+type="([^"]*)"(?:\s+filePath="([^"]*)")?(?:\s+title="([^"]*)")?>([\s\S]*?)<\/proxyAction>/g;
 
     let match;
     while ((match = actionRegex.exec(xmlContent)) !== null) {
-        const [, type, filePath, content] = match;
+        const [, title, type, filePath, content] = match;
 
-        if (type === 'file') {
+        if (type === 'ai-response') {
             // File creation step
             steps.push({
                 id: stepId++,
-                title: `Create ${filePath || 'file'}`,
+                title: `Ai Response`,
+                description: content.trim(),
+                type: StepType.AiResponse,
+                status: 'pending',
+            });
+        } else if (type === 'file') {
+            // File creation step
+            steps.push({
+                id: stepId++,
+                title: title || `Create ${filePath || 'file'}`,
                 description: '',
                 type: StepType.CreateFile,
                 status: 'pending',
