@@ -28,7 +28,7 @@ import { Step, StepType } from './types';
  * 
  * The input can have strings in the middle they need to be ignored
  */
-export function parseXml(response: string): Step[] {
+export async function parseXml(response: string): Promise<Step[]> {
     // Extract the XML content between <proxyArtifact> tags
     const xmlMatch = response.match(/<proxyArtifact[^>]*>([\s\S]*?)<\/proxyArtifact>/);
 
@@ -54,13 +54,13 @@ export function parseXml(response: string): Step[] {
     });
 
     // Regular expression to find proxyAction elements
-    const actionRegex = /<proxyAction\s+type="([^"]*)"(?:\s+filePath="([^"]*)")?(?:\s+title="([^"]*)")?>([\s\S]*?)<\/proxyAction>/g;
+    const actionRegex = /<proxyAction\s+type="([^"]*)"(?:\s+filePath="([^"]*)")?>([\s\S]*?)<\/proxyAction>/g;
 
     let match;
     while ((match = actionRegex.exec(xmlContent)) !== null) {
-        const [, title, type, filePath, content] = match;
+        const [, type, filePath, content] = match;
 
-        if (type === 'ai-response') {
+        if (type == 'ai-response') {
             // File creation step
             steps.push({
                 id: stepId++,
@@ -73,7 +73,7 @@ export function parseXml(response: string): Step[] {
             // File creation step
             steps.push({
                 id: stepId++,
-                title: title || `Create ${filePath || 'file'}`,
+                title: `Created ${filePath || 'file'}`,
                 description: '',
                 type: StepType.CreateFile,
                 status: 'pending',

@@ -55,7 +55,7 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
 
         const { prompts, uiPrompts } = res.data;
 
-        setSteps(parseXml(uiPrompts[0]).map((x: Step) => ({
+        setSteps((await parseXml(uiPrompts[0])).map((x: Step) => ({
             ...x,
             status: "pending"
         })));
@@ -66,8 +66,8 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
                 parts: [{ text: content }]
             }))
         });
-
-        setSteps(s => [...s, ...parseXml(response.data.response).map(x => ({
+        const parsedXml = await parseXml(response.data.response);
+        setSteps(s => [...s, ...parsedXml.map(x => ({
             ...x,
             status: "pending" as "pending"
         }))]);
@@ -78,11 +78,10 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
         setLlmMessages(x => [...x, { role: "assistant", content: response.data.response }])
         const aiResponses = steps.filter(x => x.type == 0).sort((a, b) => a.id - b.id);
         const stepsWithoutResponses = steps.filter(x => x.type != 0)
-        const newMessage = `
-        ${aiResponses.length > 0 && aiResponses[0]}
-        ${stepsWithoutResponses.length > 0 && '\nSteps:\n' + stepsWithoutResponses.map((step: Step) => step.title + "\n")}
-        ${aiResponses.length > 1 && aiResponses[1]}
-        `
+        const stepsMarkdown = stepsWithoutResponses.length > 0
+            ? `\n## Steps:\n\`\`\`js\n${stepsWithoutResponses.map((step: Step) => step.title).join("\n")}\n\`\`\`\n`
+            : '';
+        const newMessage = `${aiResponses.length > 0 ? aiResponses[0].description : ''}${stepsMarkdown}${aiResponses.length > 1 ? aiResponses[1].description : ''}`;
         setMessages((prev: Message[]) => [...prev, {
             role: 'assistant',
             content: newMessage
