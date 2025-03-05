@@ -34,7 +34,14 @@ const Hero = ({ user }: { user: any }) => {
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
             <div className='p-5 border rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
                 <div className='flex gap-2'>
-                    <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(event) => setUserInput(event.target.value)} value={userInput || ""} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
+                    <textarea
+                        onKeyDown={(e) => {
+                            if (e.key == 'Enter' && userInput != null && userInput != "") onGenerate(userInput);
+                        }}
+                        placeholder={Lookup.INPUT_PLACEHOLDER}
+                        value={userInput || ""}
+                        onChange={(event) => setUserInput(event.target.value)}
+                        className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
                     {!loading && userInput && <ArrowRight
                         onClick={() => onGenerate(userInput)}
                         className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />}

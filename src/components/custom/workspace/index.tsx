@@ -50,46 +50,10 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const webcontainer = useWebContainer();
-    const [isMounted, setIsMounted] = useState<boolean>(false);
-
-    useEffect(() => {
-        const createMountStructure = (files: Record<string, any>) => {
-            const mountStructure: Record<string, any> = {};
-
-            Object.entries(files).forEach(([filePath, fileData]) => {
-                const parts = filePath.split('/');
-                let currentDir = mountStructure;
-
-                for (let i = 0; i < parts.length; i++) {
-                    const part = parts[i];
-
-                    if (i === parts.length - 1) {
-                        // If it's the last part, it's a file
-                        currentDir[part] = { file: { contents: fileData.code } };
-                    } else {
-                        // If it's a folder, create a directory entry
-                        if (!currentDir[part]) {
-                            currentDir[part] = { directory: {} };
-                        }
-                        currentDir = currentDir[part].directory;
-                    }
-                }
-            });
-
-            return mountStructure;
-        };
-        setIsMounted(false);
-        if (files) {
-            const mountStructure = createMountStructure(files);
-            webcontainer?.mount(mountStructure);
-        }
-        setIsMounted(true);
-    }, [files, webcontainer]);
-
 
     useEffect(() => {
         setMessages(workspace.message);
-        setLlmMessages(workspace.llm_message);
+        setLlmMessages(workspace.llmmessage);
         setFiles(workspace.fileData);
     }, [workspace]);
 
@@ -107,10 +71,9 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         setMessages((prev: Message[]) => [...prev, {
             role: 'user',
             content: content
-        }])
+        }]);
         setLlmMessages(x => [...x, { role: "user", content: content }])
         setUserInput('');
-        await updateWorkspace(workspace.id, messages, llmMessages, files);
     }
 
     const getBasePrompt = (template: string) => {
@@ -238,10 +201,17 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
                     </div>
                     <div className='p-5 border rounded-xl max-w-2xl md:min-w-[28rem] w-full mt-3 bg-secondary'>
                         <div className='flex gap-2'>
-                            <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(e) => setUserInput(e.target.value)} value={userInput} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
-                            {userInput && <ArrowRight
+                            <textarea
+                                onKeyDown={(e) => {
+                                    if (e.key == 'Enter' && userInput != null && userInput != "") onGenerate(userInput);
+                                }}
+                                placeholder={Lookup.INPUT_PLACEHOLDER}
+                                onChange={(e) => setUserInput(e.target.value)}
+                                value={userInput}
+                                className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
+                            {!loading && userInput && <ArrowRight
                                 onClick={() => onGenerate(userInput)}
-                                className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />}
+                                className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
                             {loading && <ButtonLoader />}
                         </div>
                     </div>
@@ -266,7 +236,7 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
                         </TabsContent>
 
                         <TabsContent value="preview" className="m-0 h-[calc(100vh-4rem)]">
-                            {isMounted && <Preview files={files} webContainer={webcontainer!} />}
+                            <Preview files={files} webcontainer={webcontainer!} />
                         </TabsContent>
                     </Tabs>
                 </div>

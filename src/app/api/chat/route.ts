@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
     const { messages } = await req.json();
+    console.log(messages);
 
     try {
         const result = await gemini.generateContent({
