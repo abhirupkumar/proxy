@@ -22,6 +22,14 @@ const WorkspaceHistory = () => {
         setWorkspaceList(workspaces)
     }
 
+    const truncate = (str: string | undefined | null) => {
+        if (!str) return "New Chat";
+        if (str.length > 20) {
+            return str.substr(0, 20) + '...';
+        }
+        return str;
+    }
+
     return (
         <div className='flex flex-col'>
             {workspaceList && workspaceList?.map((workspace: any, index: number) => {
@@ -29,7 +37,7 @@ const WorkspaceHistory = () => {
                     <SidebarMenuItem key={index}>
                         <SidebarMenuButton asChild>
                             <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className=''>
-                                {workspace.message[0].content || "New Chat"}
+                                {truncate(workspace.message[0].content)}
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

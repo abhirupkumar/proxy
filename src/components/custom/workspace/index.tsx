@@ -60,10 +60,10 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         setLoading(false);
         console.log(stepsResponse.data.response)
 
-        setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
-            ...x,
-            status: "pending" as "pending"
-        }))]);
+        // setSteps(s => [...s, ...parseXml(stepsResponse.data.response).map(x => ({
+        //     ...x,
+        //     status: "pending" as "pending"
+        // }))]);
         // console.log(parseXml(stepsResponse.data.response).map(x => ({
         //     ...x,
         //     status: "pending" as "pending"

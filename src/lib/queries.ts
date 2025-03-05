@@ -75,16 +75,20 @@ export const getAllWorkspaces = async (userId: string) => {
     }
 }
 
-export const updateWorkspace = async (id: any, messages: any) => {
-    console.log(messages)
+export const updateWorkspace = async (id: any, messages: any, llmmessage: any, files?: any) => {
+    let data: { message: any; llmmessage: any; fileData?: any } = {
+        message: messages,
+        llmmessage: llmmessage
+    }
+    if (files) {
+        data.fileData = files;
+    }
     try {
         const workspace = await db.workspace.update({
             where: {
                 id: id,
             },
-            data: {
-                message: messages,
-            },
+            data: data
         })
         return workspace;
     }
@@ -92,6 +96,7 @@ export const updateWorkspace = async (id: any, messages: any) => {
         return null;
     }
 }
+
 
 export const deleteWorkspace = async (id: any) => {
     try {

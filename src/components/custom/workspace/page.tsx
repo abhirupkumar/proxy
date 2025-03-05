@@ -2,9 +2,10 @@
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMessages } from '@/context/MessagesContext';
-import { ReactBasePrompt } from '@/data/BasePrompts';
+import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
+import { BASE_PROMPT } from '@/data/Prompt';
 import { parseXml } from '@/lib/parse';
 import { updateWorkspace } from '@/lib/queries';
 import { FileItem, Step } from '@/lib/types';
@@ -12,9 +13,12 @@ import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { ArrowRight, Loader, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import { Message } from 'postcss';
 import React, { useEffect, useState } from 'react'
 import ReactMarkdown from "react-markdown";
+import ButtonLoader from '../button-loader';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FileExplorer } from '../file-explorer';
+import { CodeEditor } from '../code-editor';
 
 const MOCK_FILE_CONTENT = `// This is a sample file content
 import React from 'react';
@@ -25,40 +29,64 @@ function Component() {
 
 export default Component;`;
 
+interface Message {
+    role: 'user' | "assistant",
+    content: string
+}
+
 const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
     const prompt = workspace.message[0].content;
-    const { messages, setMessages } = useMessages();
+    const [messages, setMessages] = useState<Message[]>([]);
     const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
+    const [files, setFiles] = useState<JSON | {}>({});
     const [userInput, setUserInput] = useState<string>('');
     const { isSignedIn, user, isLoaded } = useUser();
     const [loading, setLoading] = useState<boolean>(false);
-    const [steps, setSteps] = useState<Step[]>([]);
+    const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
     useEffect(() => {
         setMessages(workspace.message);
-    }, [workspace.message]);
+        setLlmMessages(workspace.llm_message);
+        setFiles(workspace.files);
+    }, [workspace]);
 
     useEffect(() => {
         if (messages?.length > 0) {
             const role = messages[messages?.length - 1].role;
-            if (role == 'user')
-                check();
-            //     getAiResponse();
+            if (role == 'user') {
+                if (messages?.length == 1) init();
+                else getAiResponse();
+            }
         }
     }, [messages]);
 
-    const check = async () => {
+    const onGenerate = async (content: string) => {
+        setMessages((prev: Message[]) => [...prev, {
+            role: 'user',
+            content: content
+        }])
+        setLlmMessages(x => [...x, { role: "user", content: content }])
+        setUserInput('');
+        await updateWorkspace(workspace.id, messages, llmMessages, files);
+    }
+
+    const getBasePrompt = (template: string) => {
+        if (template == 'react') return ReactBasePrompt;
+        else if (template == 'node') return NodeBasePrompt;
+        else if (template == 'nextjs') return NextBasePrompt;
+        else return "Template Not Found!";
+    }
+
+    const init = async () => {
         setLoading(true);
         const res = await axios.post(`/api/template`, {
             prompt: prompt
         });
 
-        const { prompts, uiPrompts } = res.data;
-
-        setSteps((await parseXml(uiPrompts[0])).map((x: Step) => ({
-            ...x,
-            status: "pending"
-        })));
+        const { template } = res.data;
+        const prompts = [BASE_PROMPT, `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${JSON.stringify(getBasePrompt(template))}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`]
+        const uiPrompts = JSON.stringify(getBasePrompt(template));
+        const PromptFiles = JSON.parse(uiPrompts);
 
         const response = await axios.post('/api/chat', {
             messages: [...prompts, prompt].map(content => ({
@@ -66,77 +94,88 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
                 parts: [{ text: content }]
             }))
         });
-        const parsedXml = await parseXml(response.data.response);
-        setSteps(s => [...s, ...parsedXml.map(x => ({
-            ...x,
-            status: "pending" as "pending"
-        }))]);
-        setLlmMessages([...prompts, prompt].map(content => ({
+        const result = JSON.parse(response.data.response);
+        const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
+            [file.filepath]: {
+                code: file.code
+            }
+        }));
+        const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
+            const key = Object.keys(obj)[0];
+            acc[key] = obj[key];
+            return acc;
+        }, {});
+
+        const mergedFiles = { ...PromptFiles, ...formattedFiles };
+        let createdFiles = Object.keys(formattedFiles);
+
+        const newMessages: Message[] = [
+            ...messages,
+            {
+                role: "assistant",
+                content: result.explanation + (createdFiles.length > 0 ? "\nFiles Created:\n" + createdFiles.join("\n") : "")
+            },
+        ]
+
+        setFiles(mergedFiles);
+        let newllmMessages: any = [[...prompts, prompt].map(content => ({
             role: "user",
             content
-        })));
-        setLlmMessages(x => [...x, { role: "assistant", content: response.data.response }])
-        const aiResponses = steps.filter(x => x.type == 0).sort((a, b) => a.id - b.id);
-        const stepsWithoutResponses = steps.filter(x => x.type != 0)
-        const stepsMarkdown = stepsWithoutResponses.length > 0
-            ? `\n## Steps:\n\`\`\`js\n${stepsWithoutResponses.map((step: Step) => step.title).join("\n")}\n\`\`\`\n`
-            : '';
-        const newMessage = `${aiResponses.length > 0 ? aiResponses[0].description : ''}${stepsMarkdown}${aiResponses.length > 1 ? aiResponses[1].description : ''}`;
-        setMessages((prev: Message[]) => [...prev, {
-            role: 'assistant',
-            content: newMessage
-        }])
+        }))]
+        newllmMessages = [...newllmMessages, { role: "assistant", content: result }]
+        await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
+        setLlmMessages(newllmMessages)
+        setMessages(newMessages);
         setLoading(false);
-    }
-
-
-    const onGenerate = async (content: string) => {
-        setMessages((prev: Message[]) => [...prev, {
-            role: 'user',
-            content: content
-        }])
-        setUserInput('');
-        await updateWorkspace(workspace.id, messages);
     }
 
     const getAiResponse = async () => {
         setLoading(true);
-        const response: any = await fetch('/api/ai-chat', {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                prompt: messages,
-            }),
+        const response = await axios.post('/api/chat', {
+            messages: llmMessages.map(message => ({
+                role: message.role,
+                parts: [{ text: message.content }]
+            }))
         });
-        if (!response.body) return;
+        const result = JSON.parse(response.data.response);
+        const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
+            [file.filepath]: {
+                code: file.code
+            }
+        }));
+        const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
+            const key = Object.keys(obj)[0];
+            acc[key] = obj[key];
+            return acc;
+        }, {});
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let botMessage = "";
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            setLoading(false);
-
-            botMessage += decoder.decode(value, { stream: true });
-
-            setMessages((prev: any) => [
-                ...(prev[prev.length - 1]?.role == 'system' ? prev.slice(0, prev.length - 1) : prev),
-                { role: "system", content: botMessage },
-            ]);
+        const newMessages: Message[] = [
+            ...messages,
+            {
+                role: "assistant",
+                content: result.explanation + (result?.generatedFiles.length > 0 ? "\nFiles Created:\n" + result?.generatedFiles.join("\n") : "") + (result?.editedFiles.length > 0 ? "\nFiles Modified:\n" + result?.editedFiles.join("\n") : "") + (result?.deletedFiles.length > 0 ? "\nFiles Deleted:\n" + result?.deletedFiles.join("\n") : "")
+            },
+        ]
+        let mergedFiles = { ...files, ...formattedFiles };
+        if (result.deletedFiles.length > 0) {
+            mergedFiles = Object.fromEntries(Object.entries(mergedFiles).filter(([key]) => !result.deletedFiles.includes(key)));
         }
-        // await updateWorkspace(workspace.id, [...messages, { role: "system", content: botMessage }]);
+        setFiles(mergedFiles)
+        setLlmMessages(x => [...x, { role: "assistant", content: result }])
+        let newllmMessages: any = [...llmMessages, { role: "assistant", content: result }]
+        await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
+        setLlmMessages(newllmMessages)
+        setMessages(newMessages);
+        setLoading(false);
     }
+
     return (
         <div className='md:p-10 p-5'>
             <div className='grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-10'>
                 <div className='relative h-[85vh] flex flex-col'>
                     <div className='flex-1 overflow-y-scroll no-scrollbar'>
                         {messages?.map((message: any, index: number) => (
-                            <div key={index} className='flex gap-2 items-start rounded-lg p-3 mb-2 leading-7' style={{
-                                backgroundColor: Colors.CHAT_BACKGROUND,
-                            }}>
+                            <div key={index} className='flex gap-2 items-start rounded-lg p-3 mb-2 leading-7 bg-secondary'>
                                 {!isLoaded && <Skeleton className="h-[35px] w-[35px] rounded-full" />}
                                 {isLoaded && message?.role == 'user' && <Image src={user?.imageUrl!} width={35} height={35} alt="avatar" className='rounded-full' />}
                                 {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
@@ -150,20 +189,38 @@ const WorkspacePage2 = ({ workspace }: { workspace: any }) => {
                             <Loader2 className='h-4 w-4 animate-spin' />
                         </div>}
                     </div>
-                    <div className='p-5 border rounded-xl max-w-2xl md:min-w-[28rem] w-full mt-3'
-                        style={{
-                            backgroundColor: Colors.BACKGROUND
-                        }}>
+                    <div className='p-5 border rounded-xl max-w-2xl md:min-w-[28rem] w-full mt-3 bg-secondary'>
                         <div className='flex gap-2'>
-                            <textarea placeholder={Lookup.INPUT_PLACEHOLDER} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
-                            {/* {userInput && <ArrowRight
-                        onClick={() => onGenerate(userInput)}
-                        className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />} */}
+                            <textarea placeholder={Lookup.INPUT_PLACEHOLDER} onChange={(e) => setUserInput(e.target.value)} value={userInput} className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
+                            {userInput && <ArrowRight
+                                onClick={() => onGenerate(userInput)}
+                                className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />}
+                            {loading && <ButtonLoader />}
                         </div>
                     </div>
                 </div>
                 <div className='md:col-span-1 lg:col-span-2'>
-                    {/* <CodeView /> */}
+                    <Tabs defaultValue="code" className="h-screen border-2 rounded-lg">
+                        <div className="border-b">
+                            <div className="container mx-auto px-4">
+                                <TabsList className="m-1">
+                                    <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
+                                    <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
+                                </TabsList>
+                            </div>
+                        </div>
+
+                        <TabsContent value="code" className="m-0 h-[calc(100vh-4rem)]">
+                            <div className="grid grid-cols-[300px_1fr] h-full">
+                                <FileExplorer onFileSelect={setSelectedFile} />
+                                <CodeEditor filePath={selectedFile} />
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="preview" className="m-0 h-[calc(100vh-4rem)]">
+                            {/* <Preview /> */}
+                        </TabsContent>
+                    </Tabs>
                 </div>
             </div>
         </div>
