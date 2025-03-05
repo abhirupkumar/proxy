@@ -1,4 +1,3 @@
-import ChatView from '@/components/custom/chatview';
 import CodeView from '@/components/custom/codeview';
 import WorkspacePage from '@/components/custom/workspace';
 import { getWorkspace } from '@/lib/queries';
