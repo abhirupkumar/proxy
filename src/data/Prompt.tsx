@@ -46,8 +46,6 @@ Return the response in JSON format with the following schema:
     },
     ...
 ],
-  "generatedFiles": [],
-  "editedFiles": [],
   "deletedFiles": [],
   "installCommand": "",
   "runCommand": ""
@@ -121,8 +119,6 @@ Example:
       "code": "function factorial(n) {\n  if (n < 0) return undefined;\n  if (n === 0 || n === 1) return 1;\n  let result = 1;\n  for (let i = 2; i <= n; i++) {\n    result *= i;\n  }\n  return result;\n}\n\nconsole.log(factorial(5)); // Output: 120"
     }
 ],
-  "generatedFiles": ["factorial.js"],
-  "editedFiles": [],
   "deletedFiles": [],
   "installCommand": "",
   "runCommand": "node factorial.js"
@@ -150,8 +146,6 @@ Example:
       "code": "body { text-align: center; font-family: Arial, sans-serif; }\ncanvas { border: 2px solid black; }"
     }
 ],
-  "generatedFiles": ['package.json', 'src/App.tsx', 'src/main.tsx', 'src/index.css'],
-  "editedFiles": [],
   "deletedFiles": [],
   "installCommand": "npm install",
   "runCommand": "npm run dev"

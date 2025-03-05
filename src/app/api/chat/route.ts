@@ -51,22 +51,6 @@ export async function POST(req: NextRequest) {
                                 required: ["filepath", "code"]
                             },
                         },
-                        generatedFiles: {
-                            type: SchemaType.ARRAY,
-                            description: "List of additional files that are generated dynamically",
-                            items: {
-                                type: SchemaType.STRING,
-                                description: "File path of the generated file. File path should not start with /"
-                            },
-                        },
-                        editedFiles: {
-                            type: SchemaType.ARRAY,
-                            description: "List of files that have been edited/modified",
-                            items: {
-                                type: SchemaType.STRING,
-                                description: "File path of the edited file. File path should not start with /"
-                            },
-                        },
                         deletedFiles: {
                             type: SchemaType.ARRAY,
                             description: "List of files that have been deleted",
@@ -76,7 +60,7 @@ export async function POST(req: NextRequest) {
                             },
                         }
                     },
-                    required: ["projectTitle", "explanation", "runCommand", "files", "editedFiles", "deletedFiles"]
+                    required: ["projectTitle", "explanation", "runCommand", "files", "deletedFiles"]
                 },
                 responseMimeType: "application/json"
             },
