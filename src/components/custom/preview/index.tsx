@@ -59,7 +59,8 @@ export function Preview({ files, webcontainer }: PreviewFrameProps) {
 
         installProcess.output.pipeTo(new WritableStream({
             write(data) {
-                setState("Installing Dependencies");
+                setState("Installing Dependencies...");
+                console.log(data)
                 setWebData((prev) => (prev ? prev + "\n" + data : data));
             }
         }));
@@ -89,39 +90,38 @@ export function Preview({ files, webcontainer }: PreviewFrameProps) {
     }
 
     useEffect(() => {
-        if (isMounted)
+        if (isMounted == true)
             main()
     }, [isMounted])
 
     return (
         <div className="h-full text-gray-400">
-            {isMounted ? !url ? <div className="text-center">
-                <p className="mb-2">{state}</p>
-                {webData && <p className="mb-2">{webData}</p>}
+            {isMounted ? <div className="h-full flex flex-col">
+                <div className="border-b p-4 flex items-center gap-2">
+                    <Button size="icon" variant="outline" onClick={() => setPath("/")}>
+                        <RefreshCw className="h-4 w-4" />
+                    </Button>
+                    <Input
+                        value={newPath}
+                        onChange={(e) => setNewPath(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key == 'Enter') setPath(newPath);
+                        }}
+                        className="font-mono text-sm"
+                    />
+                </div>
+                {url ? <div className="flex-1 bg-background">
+                    <iframe
+                        src={url + path}
+                        width={"100%"}
+                        height={"100%"}
+                        title="Preview"
+                    />
+                </div> : <div className="text-center my-auto">
+                    <p className="mb-2">{state}</p>
+                    {webData && <p className="mb-2">{webData}</p>}
+                </div>}
             </div> :
-                <div className="h-full flex flex-col">
-                    <div className="border-b p-4 flex items-center gap-2">
-                        <Button size="icon" variant="outline" onClick={() => setPath("/")}>
-                            <RefreshCw className="h-4 w-4" />
-                        </Button>
-                        <Input
-                            value={newPath}
-                            onChange={(e) => setNewPath(e.target.value)}
-                            onKeyDown={(e) => {
-                                if (e.key == 'Enter') setPath(newPath);
-                            }}
-                            className="font-mono text-sm"
-                        />
-                    </div>
-                    <div className="flex-1 bg-background">
-                        <iframe
-                            src={url + path}
-                            width={"100%"}
-                            height={"100%"}
-                            title="Preview"
-                        />
-                    </div>
-                </div> :
                 <div className="text-center">
                     <p className="mb-2">Mounting the Preview...</p>
                 </div>

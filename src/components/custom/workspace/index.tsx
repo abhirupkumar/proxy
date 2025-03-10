@@ -124,10 +124,10 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         ]
 
         setFiles(mergedFiles);
-        let newllmMessages: any = [[...prompts, prompt].map(content => ({
+        let newllmMessages: any = [...prompts, prompt].map(content => ({
             role: "user",
             content
-        }))]
+        }))
         newllmMessages = [...newllmMessages, { role: "assistant", content: result }]
         await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
         setLlmMessages(newllmMessages)
@@ -139,8 +139,8 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         setLoading(true);
         const response = await axios.post('/api/chat', {
             messages: llmMessages.map(message => ({
-                role: message.role,
-                parts: [{ text: message.content }]
+                role: message.role == "user" ? message.role : "model",
+                parts: [{ text: message.role == 'user' ? message.content : JSON.stringify(message.content) }]
             }))
         });
         const result = JSON.parse(response.data.response);
