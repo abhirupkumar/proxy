@@ -1,97 +1,69 @@
-import { Step, StepType } from './types';
+export class ArtifactProcessor {
+    public currentArtifact: string;
+    private onFileContent: (filePath: string, fileContent: string) => void;
+    private onShellCommand: (shellCommand: string) => void;
+    public response: string;
+    public filePath: string;
+    public fileContent: string;
+    public shellCommand: string;
 
-/*
- * Parse input XML and convert it into steps.
- * Eg: Input - 
- * <proxyArtifact id=\"project-import\" title=\"Project Files\">
- *  <proxyAction type=\"file\" filePath=\"eslint.config.js\">
- *      import js from '@eslint/js';\nimport globals from 'globals';\n
- *  </proxyAction>
- * <proxyAction type="shell">
- *      node index.js
- * </proxyAction>
- * </proxyArtifact>
- * 
- * Output - 
- * [{
- *      title: "Project Files",
- *      status: "Pending"
- * }, {
- *      title: "Create eslint.config.js",
- *      type: StepType.CreateFile,
- *      code: "import js from '@eslint/js';\nimport globals from 'globals';\n"
- * }, {
- *      title: "Run command",
- *      code: "node index.js",
- *      type: StepType.RunScript
- * }]
- * 
- * The input can have strings in the middle they need to be ignored
- */
-export async function parseXml(response: string): Promise<Step[]> {
-    // Extract the XML content between <proxyArtifact> tags
-    const xmlMatch = response.match(/<proxyArtifact[^>]*>([\s\S]*?)<\/proxyArtifact>/);
-
-    if (!xmlMatch) {
-        return [];
+    constructor(currentArtifact: string, onFileContent: (filePath: string, fileContent: string) => void, onShellCommand: (shellCommand: string) => void, response: string, filePath: string, fileContent: string, shellCommand: string) {
+        this.currentArtifact = currentArtifact;
+        this.onFileContent = onFileContent;
+        this.onShellCommand = onShellCommand;
+        this.response = response;
+        this.filePath = filePath;
+        this.fileContent = fileContent;
+        this.shellCommand = shellCommand;
     }
 
-    const xmlContent = xmlMatch[1];
-    const steps: Step[] = [];
-    let stepId = 1;
+    async append(artifact: string) {
+        this.currentArtifact += artifact;
+    }
 
-    // Extract artifact title
-    const titleMatch = response.match(/title="([^"]*)"/);
-    const artifactTitle = titleMatch ? titleMatch[1] : 'Project Files';
+    async parse() {
+        const latestActionStart = this.currentArtifact.split("\n").findIndex((line) => line.includes("<proxyAction type="));
+        const latestActionEnd = this.currentArtifact.split("\n").findIndex((line) => line.includes("</proxyAction>")) ?? (this.currentArtifact.split("\n").length - 1);
 
-    // Add initial artifact step
-    steps.push({
-        id: stepId++,
-        title: artifactTitle,
-        description: '',
-        type: StepType.CreateFolder,
-        status: 'pending'
-    });
-
-    // Regular expression to find proxyAction elements
-    const actionRegex = /<proxyAction\s+type="([^"]*)"(?:\s+filePath="([^"]*)")?>([\s\S]*?)<\/proxyAction>/g;
-
-    let match;
-    while ((match = actionRegex.exec(xmlContent)) !== null) {
-        const [, type, filePath, content] = match;
-
-        if (type == 'ai-response') {
-            // File creation step
-            steps.push({
-                id: stepId++,
-                title: `Ai Response`,
-                description: content.trim(),
-                type: StepType.AiResponse,
-                status: 'pending',
-            });
-        } else if (type === 'file') {
-            // File creation step
-            steps.push({
-                id: stepId++,
-                title: `Created ${filePath || 'file'}`,
-                description: '',
-                type: StepType.CreateFile,
-                status: 'pending',
-                code: content.trim(),
-                path: filePath
-            });
-        } else if (type === 'shell') {
-            // Shell command step
-            steps.push({
-                id: stepId++,
-                title: 'Run command',
-                description: '',
-                type: StepType.RunScript,
-                status: 'pending',
-                code: content.trim()
-            });
+        if (latestActionStart === -1) {
+            return;
         }
-    }
 
-    return steps;
+        const latestActionType = this.currentArtifact.split("\n")[latestActionStart].split("type=")[1].split(" ")[0].split(">")[0];
+        // const latestActionContent = this.currentArtifact.split("\n").slice(latestActionStart, latestActionEnd + 1).join("\n");
+        let latestActionContent = this.currentArtifact.split("\n").slice(latestActionStart).join("\n");
+        if (latestActionEnd != -1) {
+            latestActionContent = latestActionContent.split("\n").slice(0, latestActionEnd + 1).join("\n");
+        }
+        // console.log("this.currentArtifact: " + this.currentArtifact);
+        // console.log("latestActionContent: " + latestActionContent);
+
+        try {
+            if (latestActionType === "\"shell\"") {
+                let shellCommand = latestActionContent.split('\n').slice(1).join('\n');
+                if (shellCommand.includes("</proxyAction>")) {
+                    shellCommand = shellCommand.split("</proxyAction>")[0];
+                    this.currentArtifact = this.currentArtifact.split(latestActionContent)[1];
+                    this.onShellCommand(shellCommand);
+                }
+            } else if (latestActionType === "\"response\"") {
+                let response2 = latestActionContent.split('\n').slice(1).join('\n');
+                if (response2.includes("</proxyAction>")) {
+                    response2 = response2.split("</proxyAction>")[0];
+                    this.currentArtifact = this.currentArtifact.split(latestActionContent)[1];
+                }
+                this.response = response2.replace(/<\/prox.*$/, "");
+            } else if (latestActionType === "\"file\"") {
+                const filePath = this.currentArtifact.split("\n")[latestActionStart].split("filePath=")[1].split(">")[0];
+                let fileContent2 = latestActionContent.split("\n").slice(1).join("\n");
+                if (fileContent2.includes("</proxyAction>")) {
+                    fileContent2 = fileContent2.split("</proxyAction>")[0];
+                    this.currentArtifact = this.currentArtifact.split(latestActionContent)[1];
+                    this.onFileContent(filePath.split("\"")[1], fileContent2);
+                }
+                this.filePath = filePath.split("\"")[1];
+                this.fileContent = fileContent2.replace(/<\/prox.*$/, "");
+            }
+        } catch (e) { }
+    }
 }

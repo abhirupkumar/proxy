@@ -2,7 +2,9 @@ import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
 import { groq } from '@/lib/groq';
-import { parseXml } from '@/lib/parse';
+import { openai } from '@/lib/openai';
+import { ArtifactProcessor } from '@/lib/parse';
+import { onFileUpdate, onShellCommand } from '@/lib/queries';
 import { SchemaType } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,70 +12,44 @@ export async function POST(req: NextRequest) {
     const { messages } = await req.json();
 
     try {
-        const result = await gemini.generateContent({
-            contents: messages,
-            generationConfig: {
-                maxOutputTokens: 8000,
-                responseSchema: {
-                    type: SchemaType.OBJECT,
-                    properties: {
-                        projectTitle: {
-                            type: SchemaType.STRING,
-                            description: "Title of the project",
-                        },
-                        explanation: {
-                            type: SchemaType.STRING,
-                            description: "An explanation of what the project does while answering the user's queries",
-                        },
-                        installCommand: {
-                            type: SchemaType.STRING,
-                            description: "Command to install dependencies for the project",
-                        },
-                        runCommand: {
-                            type: SchemaType.STRING,
-                            description: "Command to run the project",
-                        },
-                        files: {
-                            type: SchemaType.ARRAY,
-                            description: "Object containing file paths as keys and their respective code as values.",
-                            items: {
-                                type: SchemaType.OBJECT,
-                                properties: {
-                                    filepath: {
-                                        type: SchemaType.STRING,
-                                        description: "File path and it must not start with /",
-                                    },
-                                    code: {
-                                        type: SchemaType.STRING,
-                                        description: "Source code for the file"
-                                    }
-                                },
-                                required: ["filepath", "code"]
-                            },
-                        },
-                        deletedFiles: {
-                            type: SchemaType.ARRAY,
-                            description: "List of files that have been deleted",
-                            items: {
-                                type: SchemaType.STRING,
-                                description: "File path of the deleted file. File path should not start with /"
-                            },
-                        }
-                    },
-                    required: ["projectTitle", "explanation", "runCommand", "files", "deletedFiles"]
-                },
-                responseMimeType: "application/json"
-            },
-            systemInstruction: {
-                role: "system",
-                parts: [{ text: getSystemPrompt() }]
+        const result = await openai.chat.completions.create({
+            model: 'qwen/qwq-32b:free',
+            messages: [...messages, { role: "system", content: getSystemPrompt() }],
+            stream: true,
+            max_tokens: 8000
+        })
+
+        let artifact = "";
+        let artifactProcessor = new ArtifactProcessor("", (filePath, fileContent) => onFileUpdate(filePath, fileContent), (shellCommand) => onShellCommand(shellCommand), "", "", "", "");
+
+        const stream = new ReadableStream({
+            async start(controller) {
+                for await (const chunk of result) {
+                    try {
+                        const text = chunk.choices[0]?.delta?.content || "";
+                        await artifactProcessor.append(text);
+                        await artifactProcessor.parse();
+                        artifact += text;
+                        if (artifactProcessor.response != "" || artifactProcessor.filePath != "" || artifactProcessor.fileContent != "")
+                            controller.enqueue(new TextEncoder().encode(`${artifactProcessor.response}<proxy-stream-separator-bar/>${artifactProcessor.filePath}<proxy-stream-separator-bar/>${artifactProcessor.fileContent}`));
+                    } catch (error) {
+                        console.error("Error parsing chunk:", error);
+                    }
+                    finally {
+                        // console.log("completed");
+                    }
+                }
+                controller.close();
             }
         });
 
-        const response = result.response;
-        const text = response.text();
+        return new NextResponse(stream, {
+            headers: {
+                "Content-Type": "text/plain",
+                "Transfer-Encoding": "chunked"
+            }
+        });
 
-        return NextResponse.json({ response: text }, { status: 200 });
     } catch (error: any) {
         console.log(error);
         return NextResponse.json({ error: error }, { status: 500 });

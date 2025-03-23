@@ -111,3 +111,30 @@ export const deleteWorkspace = async (id: any) => {
         return null;
     }
 }
+
+export async function onFileUpdate(filePath: string, fileContent: string) {
+    // console.log(filePath + ": " + fileContent);
+    // await db.action.create({
+    //     data: {
+    //         projectId,
+    //         promptId,
+    //         content: `Updated file ${filePath}`
+    //     },
+    // });
+}
+
+export async function onShellCommand(shellCommand: string) {
+    //npm run build && npm run start
+    const commands = shellCommand.split("&&");
+    for (const command of commands) {
+        // console.log(`Running command: ${command}`);
+
+        // await db.action.create({
+        //     data: {
+        //         projectId,
+        //         promptId,
+        //         content: `Ran command: ${command}`,
+        //     },
+        // });
+    }
+}

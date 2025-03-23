@@ -25,6 +25,36 @@ body {
   }
 }
 
+
+.ai-loader {
+  width: 15px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  animation: l5 1s infinite linear alternate;
+}
+
+@keyframes l5 {
+  0% {
+    box-shadow: 20px 0 hsl(var(--primary)), -20px 0 hsl(var(--primary-foreground));
+    background: hsl(var(--primary))
+  }
+
+  33% {
+    box-shadow: 20px 0 hsl(var(--primary)), -20px 0 hsl(var(--primary-foreground));
+    background: hsl(var(--primary-foreground))
+  }
+
+  66% {
+    box-shadow: 20px 0 hsl(var(--primary-foreground)), -20px 0 hsl(var(--primary));
+    background: hsl(var(--primary-foreground))
+  }
+
+  100% {
+    box-shadow: 20px 0 hsl(var(--primary-foreground)), -20px 0 hsl(var(--primary));
+    background: hsl(var(--primary))
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

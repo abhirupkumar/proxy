@@ -1,8 +1,15 @@
 "use client";
 
-import Editor from "@monaco-editor/react";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTheme } from "next-themes";
+import CodeMirror from "@uiw/react-codemirror";
+import { javascript } from "@codemirror/lang-javascript";
+import { html } from "@codemirror/lang-html";
+import { css } from "@codemirror/lang-css";
+import { githubDark, githubLight } from "@uiw/codemirror-theme-github";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { FileText } from "lucide-react";
+import clsx from "clsx";
+import { json } from "@codemirror/lang-json";
 
 interface FileExplorerProps {
     filePath: string | null;
@@ -19,9 +26,10 @@ interface FileSystem {
 
 export function CodeEditor({ filePath, fileSystem }: FileExplorerProps) {
     const { theme } = useTheme();
+
     if (!filePath) {
         return (
-            <div className="flex items-center justify-center h-full bg-card text-muted-foreground">
+            <div className="flex items-center justify-center h-full bg-gray-900 text-muted-foreground">
                 Select a file to view its contents
             </div>
         );
@@ -36,40 +44,49 @@ export function CodeEditor({ filePath, fileSystem }: FileExplorerProps) {
         switch (ext) {
             case "tsx":
             case "ts":
-                return "typescript";
+                return javascript({ jsx: ext === 'tsx', typescript: true });
             case "jsx":
             case "js":
-                return "javascript";
+                return javascript({ jsx: ext === 'jsx' });
             case "html":
-                return "html";
+                return html();
             case "css":
-                return "css";
+                return css();
             case "json":
-                return "json";
+                return json();
             default:
-                return "plaintext";
+                return [];
         }
     };
 
     return (
-        <ScrollArea className="h-full">
-            <div className="p-4 h-full">
-                <div className="mb-4 px-2 py-1 bg-muted inline-block rounded text-sm">
-                    {filePath}
+        <ScrollArea className="h-full  border-l border-gray-800">
+            <div className="h-full">
+                {/* VS Code Style Tab */}
+                <div
+                    className={clsx(
+                        "flex items-center px-4 py-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
+                    )}
+                >
+                    <FileText className="h-4 w-4 text-blue-400 mr-2" />
+                    <span className="text-sm font-semibold">{filePath}</span>
                 </div>
-                <Editor
-                    height="calc(90vh - 10rem)"
-                    defaultLanguage={getLanguage(filePath)}
+
+                {/* Code Editor */}
+                <CodeMirror
                     value={getFileContent(filePath)}
-                    theme={theme === 'dark' ? "vs-dark" : "light"}
-                    options={{
-                        readOnly: true,
-                        minimap: { enabled: false },
-                        fontSize: 13,
-                        lineNumbers: "on",
-                        scrollBeyondLastLine: false,
-                        automaticLayout: true,
+                    extensions={[getLanguage(filePath)]}
+                    theme={theme === "dark" ? githubDark : githubLight}
+                    basicSetup={{
+                        lineNumbers: true,
+                        highlightActiveLine: true,
+                        foldGutter: true,
+                        autocompletion: true,
+                        lintKeymap: true,
+                        allowMultipleSelections: true,
                     }}
+                    readOnly
+                    className="h-full border border-gray-700 rounded-b-md shadow-lg"
                 />
             </div>
         </ScrollArea>

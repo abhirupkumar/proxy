@@ -6,14 +6,13 @@ import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BaseProm
 import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
-import { parseXml } from '@/lib/parse';
 import { updateWorkspace } from '@/lib/queries';
 import { FileItem, Step } from '@/lib/types';
 import { useUser } from '@clerk/nextjs';
 import axios from 'axios';
 import { ArrowRight, Loader, Loader2 } from 'lucide-react';
 import Image from 'next/image';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from "react-markdown";
 import ButtonLoader from '../button-loader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -21,6 +20,7 @@ import { FileExplorer } from '../file-explorer';
 import { CodeEditor } from '../code-editor';
 import { Preview } from '../preview';
 import { useWebContainer } from '@/hooks/use-web-container';
+import rehypeRaw from 'rehype-raw'
 
 const MOCK_FILE_CONTENT = `// This is a sample file content
 import React from 'react';
@@ -43,12 +43,14 @@ interface FileSystem {
 const WorkspacePage = ({ workspace }: { workspace: any }) => {
     const prompt = workspace.message[0].content;
     const [messages, setMessages] = useState<Message[]>([]);
+    const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
     const [files, setFiles] = useState<FileSystem | null>(null);
     const [userInput, setUserInput] = useState<string>('');
     const { isSignedIn, user, isLoaded } = useUser();
     const [loading, setLoading] = useState<boolean>(false);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
     const webcontainer = useWebContainer();
 
     useEffect(() => {
@@ -90,48 +92,103 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         });
 
         const { template } = res.data;
-        const prompts = [BASE_PROMPT, `Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${JSON.stringify(getBasePrompt(template))}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore\n  - package-lock.json\n`]
+        const nextjsExtraFiles = `-  hooks/use-toast.ts - components/ui/accordion.tsx - components/ui/alert-dialog.tsx - components/ui/alert.tsx - components/ui/aspect-ratio.tsx - components/ui/avatar.tsx - components/ui/badge.tsx - components/ui/breadcrumb.tsx - components/ui/button.tsx - components/ui/calendar.tsx - components/ui/card.tsx - components/ui/carousel.tsx - components/ui/chart.tsx - components/ui/checkbox.tsx - components/ui/collapsible.tsx - components/ui/command.tsx - components/ui/context-menu.tsx - components/ui/dialog.tsx - components/ui/drawer.tsx - components/ui/dropdown-menu.tsx - components/ui/form.tsx - components/ui/hover-card.tsx - components/ui/input-otp.tsx - components/ui/input.tsx - components/ui/label.tsx - components/ui/menubar.tsx - components/ui/pagination.tsx - components/ui/navigation-menu.tsx - components/ui/popover.tsx - components/ui/progress.tsx - components/ui/radio-group.tsx - components/ui/resizable.tsx - components/ui/scroll-area.tsx - components/ui/select.tsx - components/ui/separator.tsx - components/ui/sheet.tsx - components/ui/skeleton.tsx - components/ui/slider.tsx - components/ui/sonner.tsx - components/ui/switch.tsx - components/ui/table.tsx - components/ui/tabs.tsx - components/ui/textarea.tsx - components/ui/toast.tsx - components/ui/toaster.tsx - components/ui/toggle-group.tsx - components/ui/toggle.tsx - components/ui/tooltip.tsx`
+        const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Here is an artifact that contains all files of the project visible to you.\nConsider the contents of ALL files in the project.\n\n${JSON.stringify(getBasePrompt(template))}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  - .gitignore  - package-lock.json  ${template == 'nextjs' ? nextjsExtraFiles : ""}`]
         const uiPrompts = JSON.stringify(getBasePrompt(template));
         const PromptFiles = JSON.parse(uiPrompts);
 
-        const response = await axios.post('/api/chat', {
-            messages: [...prompts, prompt].map(content => ({
-                role: "user",
-                parts: [{ text: content }]
-            }))
+        // const response = await axios.post('/api/chat', {
+        // messages: [...prompts, prompt].map(content => ({
+        //     role: "user",
+        //     parts: [{ text: content }]
+        // }))
+        // });
+        // const result = JSON.parse(response.data.response);
+        // const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
+        //     [file.filepath]: {
+        //         code: file.code
+        //     }
+        // }));
+        // const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
+        //     const key = Object.keys(obj)[0];
+        //     acc[key] = obj[key];
+        //     return acc;
+        // }, {});
+
+        // const mergedFiles = { ...PromptFiles, ...formattedFiles };
+        // let createdFiles = Object.keys(mergedFiles);
+
+        // const newMessages: Message[] = [
+        //     ...messages,
+        //     {
+        //         role: "assistant",
+        //         content: result.explanation + (createdFiles.length > 0 ? "\nFiles Created:\n" + createdFiles.join("\n") : "")
+        //     },
+        // ]
+
+        // setFiles(mergedFiles);
+        // let newllmMessages: any = [...prompts, prompt].map(content => ({
+        //     role: "user",
+        //     content
+        // }))
+        // newllmMessages = [...newllmMessages, { role: "assistant", content: result }]
+        // await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
+        // setLlmMessages(newllmMessages)
+        // setMessages(newMessages);
+        // setLoading(false);
+
+        setFiles(PromptFiles);
+        setSelectedFile('package.json');
+        const controller = new AbortController();
+        abortControllerRef.current = controller;
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [...prompts, prompt].map(content => ({
+                    role: "user",
+                    // parts: [{ text: content }]
+                    content: content
+                }))
+            }),
+            signal: controller.signal
         });
-        const result = JSON.parse(response.data.response);
-        const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
-            [file.filepath]: {
-                code: file.code
+
+        if (!response.body) {
+            console.error("No response body received.");
+            return;
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let msg = "";
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const text = decoder.decode(value, { stream: true });
+            msg = text.trim();
+            const parsedText = text.split("<proxy-stream-separator-bar/>");
+            console.log(parsedText);
+
+            if (parsedText[0] != "") {
+                const textChunk = parsedText[0].trim().replace(/```/g, "");
+                setNewAiMessage(textChunk);
+                msg = textChunk;
             }
-        }));
-        const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
-            const key = Object.keys(obj)[0];
-            acc[key] = obj[key];
-            return acc;
-        }, {});
-
-        const mergedFiles = { ...PromptFiles, ...formattedFiles };
-        let createdFiles = Object.keys(mergedFiles);
-
-        const newMessages: Message[] = [
-            ...messages,
-            {
-                role: "assistant",
-                content: result.explanation + (createdFiles.length > 0 ? "\nFiles Created:\n" + createdFiles.join("\n") : "")
-            },
-        ]
-
-        setFiles(mergedFiles);
-        let newllmMessages: any = [...prompts, prompt].map(content => ({
-            role: "user",
-            content
-        }))
-        newllmMessages = [...newllmMessages, { role: "assistant", content: result }]
-        await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
-        setLlmMessages(newllmMessages)
-        setMessages(newMessages);
+            if (parsedText[1] != "" && parsedText[2] != "") {
+                setFiles(prevFiles => ({
+                    ...prevFiles,
+                    [parsedText[1].trim()]: { code: parsedText[2].trim() }
+                }));
+                setSelectedFile(parsedText[1].trim());
+            }
+        }
+        setMessages([...messages, {
+            role: "assistant",
+            content: msg
+        }])
+        setNewAiMessage("");
         setLoading(false);
     }
 
@@ -179,8 +236,13 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
         setLoading(false);
     }
 
+    const handleAbort = () => {
+        abortControllerRef.current?.abort(); // Abort the fetch request
+        setLoading(false);
+    };
+
     return (
-        <div className='md:p-10 p-5'>
+        <div className='md:p-10 p-5 w-full'>
             <div className='grid grid-cols-1 lg:grid-cols-3 md:grid-cols-2 gap-10'>
                 <div className='relative h-[85vh] flex flex-col'>
                     <div className='flex-1 overflow-y-scroll no-scrollbar'>
@@ -193,10 +255,13 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
                                     <ReactMarkdown>{message.content}</ReactMarkdown>
                                 </div>
                             </div>))}
-                        {loading && <div className='flex gap-2 items-start rounded-lg p-3 mb-2' style={{
-                            backgroundColor: Colors.CHAT_BACKGROUND,
-                        }}>
-                            <Loader2 className='h-4 w-4 animate-spin' />
+                        {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2 bg-secondary'>
+                            <div className="whitespace-pre-wrap">
+                                <ReactMarkdown>{newAiMessage}</ReactMarkdown>
+                            </div>
+                        </div>}
+                        {loading && <div className='w-full flex items-center justify-center'>
+                            <div className='ai-loader'></div>
                         </div>}
                     </div>
                     <div className='p-5 border rounded-xl max-w-2xl md:min-w-[28rem] w-full mt-3 bg-secondary'>
@@ -212,7 +277,7 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
                             {!loading && userInput && <ArrowRight
                                 onClick={() => onGenerate(userInput)}
                                 className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
-                            {loading && <ButtonLoader />}
+                            {loading && <ButtonLoader onClick={handleAbort} />}
                         </div>
                     </div>
                 </div>
@@ -227,15 +292,15 @@ const WorkspacePage = ({ workspace }: { workspace: any }) => {
                             </div>
                         </div>
 
-                        <TabsContent value="code" className="m-0 h-[calc(80vh-4rem)]">
-                            {loading ? <div className='w-full h-full flex gap-1 items-center justify-center text-lg'><Loader2 className='w-5 h-5 animate-spin' />{" Generating Response"}</div> :
+                        <TabsContent value="code" className="m-0 h-full">
+                            {files == null ? <div className='w-full h-full flex gap-1 items-center justify-center text-lg'><Loader2 className='w-5 h-5 animate-spin' />{" Generating"}</div> :
                                 <div className="grid grid-cols-[220px_1fr] h-full">
                                     {files && <FileExplorer onFileSelect={setSelectedFile} fileSystem={files} />}
                                     {files && <CodeEditor filePath={selectedFile} fileSystem={files} />}
                                 </div>}
                         </TabsContent>
 
-                        <TabsContent value="preview" className="m-0 h-[calc(100vh-4rem)]">
+                        <TabsContent value="preview" className="m-0 h-full">
                             <Preview files={files} webcontainer={webcontainer!} />
                         </TabsContent>
                     </Tabs>
