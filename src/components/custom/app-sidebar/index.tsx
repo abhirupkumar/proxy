@@ -34,7 +34,7 @@ const AppSidebar = () => {
             <SidebarFooter>
                 <SidebarFooterComponent />
             </SidebarFooter>
-            <SidebarRail className='mt-auto h-fit'>
+            <SidebarRail className='h-fit mt-[5rem]'>
                 <ToggleSidebar />
             </SidebarRail>
         </Sidebar>

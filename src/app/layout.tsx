@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Roboto_Mono } from "next/font/google";
+import { DM_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "One stop solution for building full stack web apps",
 };
 
-const font = Roboto_Mono({
+const font = DM_Sans({
   weight: "400",
   subsets: ['latin'],
 });

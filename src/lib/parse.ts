@@ -52,17 +52,17 @@ export class ArtifactProcessor {
                     response2 = response2.split("</proxyAction>")[0];
                     this.currentArtifact = this.currentArtifact.split(latestActionContent)[1];
                 }
-                this.response = response2.replace(/<\/prox.*$/, "");
+                this.response = response2;
             } else if (latestActionType === "\"file\"") {
                 const filePath = this.currentArtifact.split("\n")[latestActionStart].split("filePath=")[1].split(">")[0];
                 let fileContent2 = latestActionContent.split("\n").slice(1).join("\n");
                 if (fileContent2.includes("</proxyAction>")) {
                     fileContent2 = fileContent2.split("</proxyAction>")[0];
                     this.currentArtifact = this.currentArtifact.split(latestActionContent)[1];
-                    this.onFileContent(filePath.split("\"")[1], fileContent2);
+                    this.onFileContent(filePath.split("\"")[1].replace(/^```[\w-]*\n/, '').replace(/\n```$/, ''), fileContent2);
                 }
                 this.filePath = filePath.split("\"")[1];
-                this.fileContent = fileContent2.replace(/<\/prox.*$/, "");
+                this.fileContent = fileContent2.replace(/<\/prox.*$/, "").replace(/^```[\w-]*\n/, '').replace(/\n```$/, '');;
             }
         } catch (e) { }
     }

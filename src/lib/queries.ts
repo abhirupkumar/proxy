@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { currentUser } from "@clerk/nextjs/server";
+import { clerkClient, currentUser } from "@clerk/nextjs/server";
 
 export const getUser = async () => {
     try {
@@ -137,4 +137,7 @@ export async function onShellCommand(shellCommand: string) {
         //     },
         // });
     }
+}
+export const getClerkClient = async () => {
+    return await clerkClient();
 }

@@ -5,7 +5,7 @@ import React from 'react'
 const ToggleSidebar = () => {
   return (
     <div className='mt-auto relative cursor-pointer m-2'>
-      <PanelsLeftBottom className='w-10' />
+      <PanelsLeftBottom className='w-6' />
     </div>
   )
 }

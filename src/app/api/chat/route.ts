@@ -5,28 +5,52 @@ import { groq } from '@/lib/groq';
 import { openai } from '@/lib/openai';
 import { ArtifactProcessor } from '@/lib/parse';
 import { onFileUpdate, onShellCommand } from '@/lib/queries';
-import { SchemaType } from '@google/generative-ai';
+import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
+interface Message {
+    "role": "user" | "assistant",
+    "parts": [{ "text": string }]
+}
+
 export async function POST(req: NextRequest) {
+    const user = await currentUser();
+    if (!user)
+        return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
+
     const { messages } = await req.json();
 
     try {
-        const result = await openai.chat.completions.create({
-            model: 'qwen/qwq-32b:free',
-            messages: [...messages, { role: "system", content: getSystemPrompt() }],
-            stream: true,
-            max_tokens: 8000
-        })
+        // const result = await openai.chat.completions.create({
+        //     model: 'qwen/qwq-32b:free',
+        //     messages: [{ role: "system", content: getSystemPrompt() }],
+        //     stream: true,
+        //     max_tokens: 8192,
+        // })
+
+        const result = await gemini.generateContentStream({
+            contents: messages,
+            generationConfig: {
+                maxOutputTokens: 8192,
+                temperature: 0.5,
+                topP: 0.8,
+            },
+            systemInstruction: {
+                role: "system",
+                parts: [{ text: getSystemPrompt() }]
+            }
+        });
 
         let artifact = "";
         let artifactProcessor = new ArtifactProcessor("", (filePath, fileContent) => onFileUpdate(filePath, fileContent), (shellCommand) => onShellCommand(shellCommand), "", "", "", "");
 
         const stream = new ReadableStream({
             async start(controller) {
-                for await (const chunk of result) {
+                // for await (const chunk of result) {
+                for await (const chunk of result.stream) {
                     try {
-                        const text = chunk.choices[0]?.delta?.content || "";
+                        // const text = chunk.choices[0]?.delta?.content || "";
+                        const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text || "";
                         await artifactProcessor.append(text);
                         await artifactProcessor.parse();
                         artifact += text;
@@ -55,3 +79,5 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: error }, { status: 500 });
     }
 }
+
+export const runtime = "edge";

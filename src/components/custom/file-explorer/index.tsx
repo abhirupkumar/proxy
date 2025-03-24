@@ -1,9 +1,10 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Folder, FolderOpen, FileCode, File } from "lucide-react";
+import { Folder, FolderOpen, FileCode, File, FileText } from "lucide-react";
 import { useState } from "react";
 import clsx from "clsx";
+import Image from "next/image";
 
 interface FileExplorerProps {
     onFileSelect: (path: string) => void;
@@ -67,6 +68,30 @@ export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
         onFileSelect(fullPath);
     };
 
+    const getFileLanguage = (path: string) => {
+        const ext = path.split(".").pop()?.toLowerCase();
+        switch (ext) {
+            case "tsx":
+                return "tsx";
+            case "mts":
+            case "ts":
+                return "ts";
+            case "jsx":
+                return "jsx";
+            case "mjs":
+            case "js":
+                return "js";
+            case "html":
+                return "html";
+            case "css":
+                return "css";
+            case "json":
+                return "json";
+            default:
+                return "txt";
+        }
+    };
+
     const renderFileSystem = (structure: any, path = "", depth = 0) => {
         // Sort folders first, then files (both alphabetically)
         const sortedEntries = Object.entries(structure).sort(([nameA, itemA]: [string, any], [nameB, itemB]: [string, any]) => {
@@ -86,20 +111,20 @@ export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
                         <button
                             className={clsx(
                                 "flex items-center w-full px-2 py-1 rounded-sm text-sm hover:bg-secondary text-muted-foreground transition text-left",
-                                isExpanded && "bg-secondary text-primary"
+                                isExpanded && "text-primary"
                             )}
                             onClick={() => toggleFolder(fullPath)}
-                            style={{ paddingLeft: `${depth + 4}px` }}
+                            style={{ paddingLeft: `${depth}px` }}
                         >
                             {isExpanded ? (
-                                <FolderOpen className="h-4 w-4 mr-2 text-blue-400" />
+                                <FolderOpen className="h-4 w-4 mr-2 text-sky-400" />
                             ) : (
-                                <Folder className="h-4 w-4 mr-2 text-yellow-400" />
+                                <Folder className="h-4 w-4 mr-2 text-sky-400" />
                             )}
                             {name}
                         </button>
                         {isExpanded && item.children && (
-                            <div className="ml-3 border-l border-gray-600 pl-2">
+                            <div className="ml-1 border-l border-gray-600 pl-1">
                                 {renderFileSystem(item.children, fullPath, depth + 1)}
                             </div>
                         )}
@@ -115,9 +140,9 @@ export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
                         isSelected && "bg-secondary text-primary"
                     )}
                     onClick={() => handleFileSelect(fullPath)}
-                    style={{ paddingLeft: `${depth + 6}px` }}
+                    style={{ paddingLeft: `${depth}px` }}
                 >
-                    <File className="h-4 w-4 mr-2 text-green-400" />
+                    {getFileLanguage(fullPath) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(fullPath)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
                     {name}
                 </button>
             );
@@ -127,13 +152,13 @@ export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
     const fileTree = createFileTree();
 
     return (
-        <div className="border-r h-full text-secondary-foreground">
+        <ScrollArea className="border-r h-[calc(100vh-3rem)] text-secondary-foreground">
             <div className="p-4 border-b border-gray-700">
                 <h2 className="font-semibold text-secondary-foreground/80">Explorer</h2>
             </div>
-            <ScrollArea className="h-full">
+            <div>
                 <div className="p-2">{renderFileSystem(fileTree)}</div>
-            </ScrollArea>
-        </div>
+            </div>
+        </ScrollArea>
     );
 }
