@@ -34,3 +34,27 @@ export interface FileViewerProps {
     file: FileItem | null;
     onClose: () => void;
 }
+
+export interface ProxyArtifactData {
+    id: string;
+    title: string;
+}
+
+export type ActionType = 'file' | 'shell';
+
+export interface BaseAction {
+    content: string;
+}
+
+export interface FileAction extends BaseAction {
+    type: 'file';
+    filePath: string;
+}
+
+export interface ShellAction extends BaseAction {
+    type: 'shell';
+}
+
+export type ProxyAction = FileAction | ShellAction;
+
+export type ProxyActionData = ProxyAction | BaseAction;

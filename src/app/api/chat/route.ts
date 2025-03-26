@@ -6,6 +6,7 @@ import { openai } from '@/lib/openai';
 import { ArtifactProcessor } from '@/lib/parse';
 import { onFileUpdate, onShellCommand } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
+import { SchemaType, Tool } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Message {
@@ -28,17 +29,37 @@ export async function POST(req: NextRequest) {
         //     max_tokens: 8192,
         // })
 
+        const tools: Tool[] = [
+            {
+                functionDeclarations: [
+                    {
+                        name: "codeGeneration",
+                        description: "Generate code and response in the specified artifact format.",
+                        parameters: {
+                            type: SchemaType.OBJECT,
+                            properties: {
+                                response: {
+                                    type: SchemaType.STRING,
+                                    description: "Artifacts in the format mentioned in the system instruction"
+                                }
+                            },
+                            required: ["response"]
+                        }
+                    }
+                ]
+            }
+        ]
+
         const result = await gemini.generateContentStream({
             contents: messages,
             generationConfig: {
-                maxOutputTokens: 8192,
                 temperature: 0.5,
                 topP: 0.8,
             },
             systemInstruction: {
                 role: "system",
                 parts: [{ text: getSystemPrompt() }]
-            }
+            },
         });
 
         let artifact = "";
@@ -51,11 +72,12 @@ export async function POST(req: NextRequest) {
                     try {
                         // const text = chunk.choices[0]?.delta?.content || "";
                         const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-                        await artifactProcessor.append(text);
-                        await artifactProcessor.parse();
-                        artifact += text;
-                        if (artifactProcessor.response != "" || artifactProcessor.filePath != "" || artifactProcessor.fileContent != "")
-                            controller.enqueue(new TextEncoder().encode(`${artifactProcessor.response}<proxy-stream-separator-bar/>${artifactProcessor.filePath}<proxy-stream-separator-bar/>${artifactProcessor.fileContent}`));
+                        controller.enqueue(new TextEncoder().encode(text));
+                        // artifactProcessor.append(text);
+                        // artifactProcessor.parse();
+                        // artifact += text;
+                        // if (artifactProcessor.response != "" || artifactProcessor.filePath != "" || artifactProcessor.fileContent != "")
+                        //     controller.enqueue(new TextEncoder().encode(`${artifactProcessor.response}<proxy-stream-separator-bar/>${artifactProcessor.filePath}<proxy-stream-separator-bar/>${artifactProcessor.fileContent}`));
                     } catch (error) {
                         console.error("Error parsing chunk:", error);
                     }

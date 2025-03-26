@@ -17,11 +17,11 @@ export class ArtifactProcessor {
         this.shellCommand = shellCommand;
     }
 
-    async append(artifact: string) {
+    append(artifact: string) {
         this.currentArtifact += artifact;
     }
 
-    async parse() {
+    parse() {
         const latestActionStart = this.currentArtifact.split("\n").findIndex((line) => line.includes("<proxyAction type="));
         const latestActionEnd = this.currentArtifact.split("\n").findIndex((line) => line.includes("</proxyAction>")) ?? (this.currentArtifact.split("\n").length - 1);
 
@@ -62,7 +62,7 @@ export class ArtifactProcessor {
                     this.onFileContent(filePath.split("\"")[1].replace(/^```[\w-]*\n/, '').replace(/\n```$/, ''), fileContent2);
                 }
                 this.filePath = filePath.split("\"")[1];
-                this.fileContent = fileContent2.replace(/<\/prox.*$/, "").replace(/^```[\w-]*\n/, '').replace(/\n```$/, '');;
+                this.fileContent = fileContent2.replace(/^```[\w-]*\n/, '').replace(/\n```$/, '');
             }
         } catch (e) { }
     }
