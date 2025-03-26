@@ -193,9 +193,9 @@ export class StreamingMessageParser {
 
                             this._options.callbacks?.onArtifactOpen?.({ messageId, ...currentArtifact });
 
-                            const artifactFactory = this._options.artifactElement ?? createArtifactElement;
+                            // const artifactFactory = this._options.artifactElement ?? createArtifactElement;
 
-                            output += artifactFactory({ messageId });
+                            // output += artifactFactory({ messageId });
 
                             i = openTagEnd + 1;
                         } else {
@@ -265,17 +265,17 @@ export class StreamingMessageParser {
     }
 }
 
-const createArtifactElement: ElementFactory = (props) => {
-    const elementProps = [
-        'class="__proxyArtifact__"',
-        ...Object.entries(props).map(([key, value]) => {
-            return `data-${camelToDashCase(key)}=${JSON.stringify(value)}`;
-        }),
-    ];
+// const createArtifactElement: ElementFactory = (props) => {
+//     const elementProps = [
+//         'class="__proxyArtifact__"',
+//         ...Object.entries(props).map(([key, value]) => {
+//             return `data-${camelToDashCase(key)}=${JSON.stringify(value)}`;
+//         }),
+//     ];
 
-    return `<div ${elementProps.join(' ')}></div>`;
-};
+//     return `<div ${elementProps.join(' ')}></div>`;
+// };
 
-function camelToDashCase(input: string) {
-    return input.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
+// function camelToDashCase(input: string) {
+//     return input.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+// }

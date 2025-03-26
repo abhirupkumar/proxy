@@ -1,10 +1,14 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import { PluggableList, Plugin } from "unified";
+import { SKIP, visit } from "unist-util-visit";
+import rehypeSanitize, { defaultSchema, type Options as RehypeSanitizeOptions } from 'rehype-sanitize';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-
 
 export const allowedHTMLElements = [
   'a',
@@ -57,6 +61,64 @@ export const allowedHTMLElements = [
   'var',
 ];
 
+const rehypeSanitizeOptions: RehypeSanitizeOptions = {
+  ...defaultSchema,
+  tagNames: allowedHTMLElements,
+  attributes: {
+    ...defaultSchema.attributes,
+    div: [...(defaultSchema.attributes?.div ?? []), 'data*', ['className', '__boltArtifact__']],
+  },
+  strip: [],
+};
+
+export function remarkPlugins(limitedMarkdown: boolean) {
+  const plugins: PluggableList = [remarkGfm];
+
+  if (limitedMarkdown) {
+    plugins.unshift(limitedMarkdownPlugin);
+  }
+
+  return plugins;
+}
+
+export function rehypePlugins(html: boolean) {
+  const plugins: PluggableList = [];
+
+  if (html) {
+    plugins.push(rehypeRaw, [rehypeSanitize, rehypeSanitizeOptions]);
+  }
+
+  return plugins;
+}
+
+const limitedMarkdownPlugin: Plugin = () => {
+  return (tree, file) => {
+    const contents = file.toString();
+
+    visit(tree, (node, index, parent: any) => {
+      if (
+        index == null ||
+        ['paragraph', 'text', 'inlineCode', 'code', 'strong', 'emphasis'].includes(node.type) ||
+        !node.position
+      ) {
+        return true;
+      }
+
+      let value = contents.slice(node.position.start.offset, node.position.end.offset);
+
+      if (node.type === 'heading') {
+        value = `\n${value}`;
+      }
+
+      parent.children[index] = {
+        type: 'text',
+        value,
+      } as any;
+
+      return [SKIP, index] as const;
+    });
+  };
+};
 
 export function stripIndents(value: string): string;
 export function stripIndents(strings: TemplateStringsArray, ...values: any[]): string;

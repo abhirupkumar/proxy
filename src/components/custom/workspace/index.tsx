@@ -111,111 +111,32 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         const uiPrompts = JSON.stringify(getBasePrompt(template));
         const PromptFiles = JSON.parse(uiPrompts);
 
-        // const response = await axios.post('/api/chat', {
-        // messages: [...prompts, prompt].map(content => ({
-        //     role: "user",
-        //     parts: [{ text: content }]
-        // }))
-        // });
-        // const result = JSON.parse(response.data.response);
-        // const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
-        //     [file.filepath]: {
-        //         code: file.code
-        //     }
-        // }));
-        // const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
-        //     const key = Object.keys(obj)[0];
-        //     acc[key] = obj[key];
-        //     return acc;
-        // }, {});
-
-        // const mergedFiles = { ...PromptFiles, ...formattedFiles };
-        // let createdFiles = Object.keys(mergedFiles);
-
-        // const newMessages: Message[] = [
-        //     ...messages,
-        //     {
-        //         role: "assistant",
-        //         content: result.explanation + (createdFiles.length > 0 ? "\nFiles Created:\n" + createdFiles.join("\n") : "")
-        //     },
-        // ]
-
-        // setFiles(mergedFiles);
-        // let newllmMessages: any = [...prompts, prompt].map(content => ({
-        //     role: "user",
-        //     content
-        // }))
-        // newllmMessages = [...newllmMessages, { role: "assistant", content: result }]
-        // await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
-        // setLlmMessages(newllmMessages)
-        // setMessages(newMessages);
-        // setLoading(false);
-
-        // setFiles(PromptFiles);
-        // setSelectedFile('package.json');
-        // const controller = new AbortController();
-        // abortControllerRef.current = controller;
-        // let promptsArray: { role: string, parts: [{ text: string, toolInvocation?: any }] }[] = [...prompts, prompt].map(content => ({
-        //     role: "user",
-        //     parts: [{ text: content }]
-        //     // content: content
-        // }))
-
-        // let step = 0;
-        // let fileStep = 0;
-        // let filestoBeEdited = [];
-        // while (true) {
-        // const response = await fetch("/api/agent", {
-        //     method: "POST",
-        //     headers: { "Content-Type": "application/json" },
-        //     body: JSON.stringify({
-        //         messages: promptsArray,
-        //         tool: toolInvocation[step]
-        //     }),
-        //     // signal: controller.signal
-        // });
-
-        //     const result = await response.json();
-        //     const type = result.response.candidates?.[0].content.parts?.[0].functionCall.name;
-        //     if (type == 'startup') step++;
-        //     else if (type == 'files') {
-        //         step++;
-        //         filestoBeEdited = result.response.candidates?.[0].content.parts?.[0].functionCall.args.components
-        //     }
-        //     else if (type == 'changes_complete') {
-        //         step++;
-        //         const isComplete = result.response.candidates?.[0].content.parts?.[0].functionCall.args.isComplete
-        //         promptsArray.push({
-        //             role: "assistant",
-        //             parts: [{ text: result.response.candidates?.[0].content.parts?.[0].functionCall.args.response }]
-        //         })
-        //         if (isComplete) break;
-        //         else step = 1;
-        //     }
-        //     console.log(result.response.candidates?.[0].content.parts?.[0].functionCall)
-        //     if (type != "files")
-        //         promptsArray.push({
-        //             role: "assistant",
-        //             parts: [{ text: result.response.candidates?.[0].content.parts?.[0].functionCall.args.response }]
-        //         })
-        //     else {
-        //         if (filestoBeEdited.length > 0) {
-        //             promptsArray.push({
-        //                 role: "assistant",
-        //                 parts: [{ text: ` Make the neccessary changes in this file: ${filestoBeEdited[filestoBeEdited.length - 1]}` }]
-        //             })
-        //             filestoBeEdited.pop();
-        //         }
-        //         else step++;
-        //     }
-        // }
-
         const messageParser = new StreamingMessageParser({
             callbacks: {
                 onArtifactOpen: (data) => { },
                 onArtifactClose: (data) => { },
-                onActionOpen: (data) => { },
-                onActionClose: (data) => { },
+                onActionOpen: (data) => {
+                    if (data.action.type == "file") {
+                        const filePath = data.action.filePath
+                        setSelectedFile(filePath);
+                        setFiles((prev) => ({
+                            ...prev, [filePath]: {
+                                code: data.action.content
+                            }
+                        }))
+                    }
+                },
+                onActionClose: (data) => {
+                    if (data.action.type == "file") {
+                        const filePath = data.action.filePath
+                        setSelectedFile(filePath);
+                        setFiles((prev) => ({
+                            ...prev, [filePath]: {
+                                code: data.action.content
+                            }
+                        }))
+                    }
+                },
             },
         });
 
@@ -242,31 +163,16 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let msg = "";
+        let buffer = "";
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
 
             const text = decoder.decode(value, { stream: true });
-            msg += text;
-            const parsedText = messageParser.parse("msg-id", msg);
-            console.log(parsedText);
-
-            // const parsedText = text.split("<proxy-stream-separator-bar/>");
-            // console.log(msg);
-
-            // if (parsedText[0] != "") {
-            //     // replace ``` from textChunk at the last
-            //     const textChunk = parsedText[0].trim();
-            //     msg = textChunk;
-            //     setNewAiMessage(textChunk);
-            // }
-            // if (parsedText[1] != "" && parsedText[2] != "") {
-            //     setFiles(prevFiles => ({
-            //         ...prevFiles,
-            //         [parsedText[1].trim()]: { code: parsedText[2].trim() }
-            //     }));
-            //     setSelectedFile(parsedText[1].trim());
-            // }
+            buffer += text;
+            const parsedText = messageParser.parse("msg-id", buffer);
+            msg += parsedText.trim();
+            setNewAiMessage(msg)
         }
         setMessages([...messages, {
             role: "assistant",
@@ -321,7 +227,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     }
 
     const handleAbort = () => {
-        abortControllerRef.current?.abort(); // Abort the fetch request
+        abortControllerRef.current?.abort();
         setLoading(false);
     };
 
