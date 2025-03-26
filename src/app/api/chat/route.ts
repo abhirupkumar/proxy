@@ -4,7 +4,6 @@ import { gemini } from '@/lib/gemini';
 import { groq } from '@/lib/groq';
 import { openai } from '@/lib/openai';
 import { RegexProcessor } from '@/lib/parse';
-import { onFileUpdate, onShellCommand } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { SchemaType, Tool } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
@@ -62,22 +61,12 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        let regex = "";
-        let regexProcessor = new RegexProcessor("", (filePath, fileContent) => onFileUpdate(filePath, fileContent), (shellCommand) => onShellCommand(shellCommand), "", "", "", "");
-
         const stream = new ReadableStream({
             async start(controller) {
-                // for await (const chunk of result) {
                 for await (const chunk of result.stream) {
                     try {
-                        // const text = chunk.choices[0]?.delta?.content || "";
                         const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text || "";
                         controller.enqueue(new TextEncoder().encode(text));
-                        // regexProcessor.append(text);
-                        // regexProcessor.parse();
-                        // regex += text;
-                        // if (regexProcessor.response != "" || regexProcessor.filePath != "" || regexProcessor.fileContent != "")
-                        //     controller.enqueue(new TextEncoder().encode(`${regexProcessor.response}<proxy-stream-separator-bar/>${regexProcessor.filePath}<proxy-stream-separator-bar/>${regexProcessor.fileContent}`));
                     } catch (error) {
                         console.error("Error parsing chunk:", error);
                     }

@@ -112,15 +112,15 @@ export const deleteWorkspace = async (id: any) => {
     }
 }
 
-export async function onFileUpdate(filePath: string, fileContent: string) {
-    // console.log(filePath + ": " + fileContent);
-    // await db.action.create({
-    //     data: {
-    //         projectId,
-    //         promptId,
-    //         content: `Updated file ${filePath}`
-    //     },
-    // });
+export async function onFilesUpdate(id: string, files: any) {
+    await db.workspace.update({
+        where: {
+            id: id,
+        },
+        data: {
+            fileData: files
+        }
+    })
 }
 
 export async function onShellCommand(shellCommand: string) {

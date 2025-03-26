@@ -8,7 +8,7 @@ const ButtonLoader = ({ onClick }: { onClick?: () => void }) => {
             className="w-10 h-10 flex p-2 rounded-md text-secondary bg-primary items-center"
             disabled={true}
         >
-            <Loader2 className='animate-spin h-5 w-5' />
+            <Loader2 className='animate-spin h-5 w-5 cursor-pointer' />
         </button>
     )
 }
