@@ -1,37 +1,37 @@
-import { ActionType, FileAction, ProxyAction, ProxyActionData, ProxyArtifactData, ShellAction } from "./types";
+import { ActionType, FileAction, ProxyAction, ProxyActionData, ProxyRegexData, ShellAction } from "./types";
 
 
-const ARTIFACT_TAG_OPEN = '<proxyArtifact';
-const ARTIFACT_TAG_CLOSE = '</proxyArtifact>';
-const ARTIFACT_ACTION_TAG_OPEN = '<proxyAction';
-const ARTIFACT_ACTION_TAG_CLOSE = '</proxyAction>';
+const REGEX_TAG_OPEN = '<proxyRegex';
+const REGEX_TAG_CLOSE = '</proxyRegex>';
+const REGEX_ACTION_TAG_OPEN = '<proxyAction';
+const REGEX_ACTION_TAG_CLOSE = '</proxyAction>';
 
 interface MessageState {
     position: number;
-    insideArtifact: boolean;
+    insideRegex: boolean;
     insideAction: boolean;
-    currentArtifact?: ProxyArtifactData;
+    currentRegex?: ProxyRegexData;
     currentAction: ProxyActionData;
     actionId: number;
 }
 
-export interface ArtifactCallbackData extends ProxyArtifactData {
+export interface RegexCallbackData extends ProxyRegexData {
     messageId: string;
 }
 
 export interface ActionCallbackData {
-    artifactId: string;
+    regexId: string;
     messageId: string;
     actionId: string;
     action: ProxyAction;
 }
 
-export type ArtifactCallback = (data: ArtifactCallbackData) => void;
+export type RegexCallback = (data: RegexCallbackData) => void;
 export type ActionCallback = (data: ActionCallbackData) => void;
 
 export interface ParserCallbacks {
-    onArtifactOpen?: ArtifactCallback;
-    onArtifactClose?: ArtifactCallback;
+    onRegexOpen?: RegexCallback;
+    onRegexClose?: RegexCallback;
     onActionOpen?: ActionCallback;
     onActionClose?: ActionCallback;
 }
@@ -44,7 +44,7 @@ type ElementFactory = (props: ElementFactoryProps) => string;
 
 export interface StreamingMessageParserOptions {
     callbacks?: ParserCallbacks;
-    artifactElement?: ElementFactory;
+    regexElement?: ElementFactory;
 }
 
 export class StreamingMessageParser {
@@ -59,7 +59,7 @@ export class StreamingMessageParser {
             state = {
                 position: 0,
                 insideAction: false,
-                insideArtifact: false,
+                insideRegex: false,
                 currentAction: { content: '' },
                 actionId: 0,
             };
@@ -72,15 +72,15 @@ export class StreamingMessageParser {
         let earlyBreak = false;
 
         while (i < input.length) {
-            if (state.insideArtifact) {
-                const currentArtifact = state.currentArtifact;
+            if (state.insideRegex) {
+                const currentRegex = state.currentRegex;
 
-                if (currentArtifact === undefined) {
-                    throw new Error('Artifact not initialized');
+                if (currentRegex === undefined) {
+                    throw new Error('Regex not initialized');
                 }
 
                 if (state.insideAction) {
-                    const closeIndex = input.indexOf(ARTIFACT_ACTION_TAG_CLOSE, i);
+                    const closeIndex = input.indexOf(REGEX_ACTION_TAG_CLOSE, i);
 
                     const currentAction = state.currentAction;
 
@@ -96,7 +96,7 @@ export class StreamingMessageParser {
                         currentAction.content = content;
 
                         this._options.callbacks?.onActionClose?.({
-                            artifactId: currentArtifact.id,
+                            regexId: currentRegex.id,
                             messageId,
 
                             /**
@@ -112,15 +112,15 @@ export class StreamingMessageParser {
                         state.insideAction = false;
                         state.currentAction = { content: '' };
 
-                        i = closeIndex + ARTIFACT_ACTION_TAG_CLOSE.length;
+                        i = closeIndex + REGEX_ACTION_TAG_CLOSE.length;
                     } else {
                         break;
                     }
                 } else {
-                    const actionOpenIndex = input.indexOf(ARTIFACT_ACTION_TAG_OPEN, i);
-                    const artifactCloseIndex = input.indexOf(ARTIFACT_TAG_CLOSE, i);
+                    const actionOpenIndex = input.indexOf(REGEX_ACTION_TAG_OPEN, i);
+                    const regexCloseIndex = input.indexOf(REGEX_TAG_CLOSE, i);
 
-                    if (actionOpenIndex !== -1 && (artifactCloseIndex === -1 || actionOpenIndex < artifactCloseIndex)) {
+                    if (actionOpenIndex !== -1 && (regexCloseIndex === -1 || actionOpenIndex < regexCloseIndex)) {
                         const actionEndIndex = input.indexOf('>', actionOpenIndex);
 
                         if (actionEndIndex !== -1) {
@@ -129,7 +129,7 @@ export class StreamingMessageParser {
                             state.currentAction = this.#parseActionTag(input, actionOpenIndex, actionEndIndex);
 
                             this._options.callbacks?.onActionOpen?.({
-                                artifactId: currentArtifact.id,
+                                regexId: currentRegex.id,
                                 messageId,
                                 actionId: String(state.actionId++),
                                 action: state.currentAction as ProxyAction,
@@ -139,13 +139,13 @@ export class StreamingMessageParser {
                         } else {
                             break;
                         }
-                    } else if (artifactCloseIndex !== -1) {
-                        this._options.callbacks?.onArtifactClose?.({ messageId, ...currentArtifact });
+                    } else if (regexCloseIndex !== -1) {
+                        this._options.callbacks?.onRegexClose?.({ messageId, ...currentRegex });
 
-                        state.insideArtifact = false;
-                        state.currentArtifact = undefined;
+                        state.insideRegex = false;
+                        state.currentRegex = undefined;
 
-                        i = artifactCloseIndex + ARTIFACT_TAG_CLOSE.length;
+                        i = regexCloseIndex + REGEX_TAG_CLOSE.length;
                     } else {
                         break;
                     }
@@ -154,10 +154,10 @@ export class StreamingMessageParser {
                 let j = i;
                 let potentialTag = '';
 
-                while (j < input.length && potentialTag.length < ARTIFACT_TAG_OPEN.length) {
+                while (j < input.length && potentialTag.length < REGEX_TAG_OPEN.length) {
                     potentialTag += input[j];
 
-                    if (potentialTag === ARTIFACT_TAG_OPEN) {
+                    if (potentialTag === REGEX_TAG_OPEN) {
                         const nextChar = input[j + 1];
 
                         if (nextChar && nextChar !== '>' && nextChar !== ' ') {
@@ -169,33 +169,33 @@ export class StreamingMessageParser {
                         const openTagEnd = input.indexOf('>', j);
 
                         if (openTagEnd !== -1) {
-                            const artifactTag = input.slice(i, openTagEnd + 1);
+                            const regexTag = input.slice(i, openTagEnd + 1);
 
-                            const artifactTitle = this.#extractAttribute(artifactTag, 'title') as string;
-                            const artifactId = this.#extractAttribute(artifactTag, 'id') as string;
+                            const regexTitle = this.#extractAttribute(regexTag, 'title') as string;
+                            const regexId = this.#extractAttribute(regexTag, 'id') as string;
 
-                            if (!artifactTitle) {
-                                console.warn('Artifact title missing');
+                            if (!regexTitle) {
+                                console.warn('Regex title missing');
                             }
 
-                            if (!artifactId) {
-                                console.warn('Artifact id missing');
+                            if (!regexId) {
+                                console.warn('Regex id missing');
                             }
 
-                            state.insideArtifact = true;
+                            state.insideRegex = true;
 
-                            const currentArtifact = {
-                                id: artifactId,
-                                title: artifactTitle,
-                            } satisfies ProxyArtifactData;
+                            const currentRegex = {
+                                id: regexId,
+                                title: regexTitle,
+                            } satisfies ProxyRegexData;
 
-                            state.currentArtifact = currentArtifact;
+                            state.currentRegex = currentRegex;
 
-                            this._options.callbacks?.onArtifactOpen?.({ messageId, ...currentArtifact });
+                            this._options.callbacks?.onRegexOpen?.({ messageId, ...currentRegex });
 
-                            // const artifactFactory = this._options.artifactElement ?? createArtifactElement;
+                            // const regexFactory = this._options.regexElement ?? createRegexElement;
 
-                            // output += artifactFactory({ messageId });
+                            // output += regexFactory({ messageId });
 
                             i = openTagEnd + 1;
                         } else {
@@ -203,7 +203,7 @@ export class StreamingMessageParser {
                         }
 
                         break;
-                    } else if (!ARTIFACT_TAG_OPEN.startsWith(potentialTag)) {
+                    } else if (!REGEX_TAG_OPEN.startsWith(potentialTag)) {
                         output += input.slice(i, j + 1);
                         i = j + 1;
                         break;
@@ -212,7 +212,7 @@ export class StreamingMessageParser {
                     j++;
                 }
 
-                if (j === input.length && ARTIFACT_TAG_OPEN.startsWith(potentialTag)) {
+                if (j === input.length && REGEX_TAG_OPEN.startsWith(potentialTag)) {
                     break;
                 }
             } else {
@@ -265,9 +265,9 @@ export class StreamingMessageParser {
     }
 }
 
-// const createArtifactElement: ElementFactory = (props) => {
+// const createRegexElement: ElementFactory = (props) => {
 //     const elementProps = [
-//         'class="__proxyArtifact__"',
+//         'class="__proxyRegex__"',
 //         ...Object.entries(props).map(([key, value]) => {
 //             return `data-${camelToDashCase(key)}=${JSON.stringify(value)}`;
 //         }),

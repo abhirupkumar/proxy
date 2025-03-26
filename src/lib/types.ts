@@ -35,7 +35,7 @@ export interface FileViewerProps {
     onClose: () => void;
 }
 
-export interface ProxyArtifactData {
+export interface ProxyRegexData {
     id: string;
     title: string;
 }

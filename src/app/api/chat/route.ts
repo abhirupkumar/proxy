@@ -3,7 +3,7 @@ import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
 import { groq } from '@/lib/groq';
 import { openai } from '@/lib/openai';
-import { ArtifactProcessor } from '@/lib/parse';
+import { RegexProcessor } from '@/lib/parse';
 import { onFileUpdate, onShellCommand } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { SchemaType, Tool } from '@google/generative-ai';
@@ -34,13 +34,13 @@ export async function POST(req: NextRequest) {
                 functionDeclarations: [
                     {
                         name: "codeGeneration",
-                        description: "Generate code and response in the specified artifact format.",
+                        description: "Generate code and response in the specified regex format.",
                         parameters: {
                             type: SchemaType.OBJECT,
                             properties: {
                                 response: {
                                     type: SchemaType.STRING,
-                                    description: "Artifacts in the format mentioned in the system instruction"
+                                    description: "Regexs in the format mentioned in the system instruction"
                                 }
                             },
                             required: ["response"]
@@ -62,8 +62,8 @@ export async function POST(req: NextRequest) {
             },
         });
 
-        let artifact = "";
-        let artifactProcessor = new ArtifactProcessor("", (filePath, fileContent) => onFileUpdate(filePath, fileContent), (shellCommand) => onShellCommand(shellCommand), "", "", "", "");
+        let regex = "";
+        let regexProcessor = new RegexProcessor("", (filePath, fileContent) => onFileUpdate(filePath, fileContent), (shellCommand) => onShellCommand(shellCommand), "", "", "", "");
 
         const stream = new ReadableStream({
             async start(controller) {
@@ -73,11 +73,11 @@ export async function POST(req: NextRequest) {
                         // const text = chunk.choices[0]?.delta?.content || "";
                         const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text || "";
                         controller.enqueue(new TextEncoder().encode(text));
-                        // artifactProcessor.append(text);
-                        // artifactProcessor.parse();
-                        // artifact += text;
-                        // if (artifactProcessor.response != "" || artifactProcessor.filePath != "" || artifactProcessor.fileContent != "")
-                        //     controller.enqueue(new TextEncoder().encode(`${artifactProcessor.response}<proxy-stream-separator-bar/>${artifactProcessor.filePath}<proxy-stream-separator-bar/>${artifactProcessor.fileContent}`));
+                        // regexProcessor.append(text);
+                        // regexProcessor.parse();
+                        // regex += text;
+                        // if (regexProcessor.response != "" || regexProcessor.filePath != "" || regexProcessor.fileContent != "")
+                        //     controller.enqueue(new TextEncoder().encode(`${regexProcessor.response}<proxy-stream-separator-bar/>${regexProcessor.filePath}<proxy-stream-separator-bar/>${regexProcessor.fileContent}`));
                     } catch (error) {
                         console.error("Error parsing chunk:", error);
                     }
