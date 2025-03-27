@@ -40,6 +40,7 @@
     "crypto": "^1.0.1",
     "dedent": "^1.5.3",
     "groq-sdk": "^0.15.0",
+    "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
     "markdown-to-text": "^0.1.1",
     "markdown-to-txt": "^2.0.1",

@@ -28,6 +28,7 @@ model Workspace {
   message    Json
   llmmessage Json?
   title      String?
+  artifactId String?
   fileData   Json?
   userId     String  @db.Uuid
   User       User    @relation(fields: [userId], references: [id], onDelete: Cascade)

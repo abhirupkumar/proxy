@@ -3,7 +3,7 @@
 import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
-import { onFilesUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
+import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
 import axios from 'axios';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -18,6 +18,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import styles from './_components/Markdown.module.scss';
+import JSZip from 'jszip';
 
 interface Message {
     role: 'user' | "assistant",
@@ -30,6 +31,7 @@ interface FileSystem {
 
 const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
     const prompt = workspace.message[0].content;
+    const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [messages, setMessages] = useState<Message[]>([]);
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
@@ -41,12 +43,37 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const abortControllerRef = useRef<AbortController | null>(null);
     const webcontainer = useWebContainer();
 
+    const handleDownload = async () => {
+        const zip = new JSZip();
+
+        const projectFolder = zip.folder('vite-react-typescript-starter');
+
+        Object.entries(files!).forEach(([filename, { code }]) => {
+            projectFolder?.file(filename, code);
+        });
+
+        const content = await zip.generateAsync({ type: 'blob' });
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        link.download = 'vite-react-typescript-starter.zip';
+
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     const messageParser = new StreamingMessageParser({
         callbacks: {
             onRegexOpen: (data) => {
                 setAction("Generating Response");
             },
             onRegexClose: (data) => {
+                if (artifactId == "proxy-web-app") {
+                    setArtifactId(data.id);
+                    console.log(data.id);
+                    onIdAndTitleUpdate(workspace.id, data.title, data.id);
+                }
                 setAction("");
             },
             onActionOpen: (data) => {
@@ -58,8 +85,10 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             onActionClose: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
+                    console.log(files);
+                    const oldFiles = files;
                     const newFiles = {
-                        ...files,
+                        ...oldFiles,
                         [filePath]: {
                             code: data.action.content
                         }
@@ -76,6 +105,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         setMessages(workspace.message);
         setLlmMessages(workspace.llmmessage);
         setFiles(workspace.fileData);
+        setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
 
@@ -118,7 +148,6 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         const PromptFiles: FileSystem = JSON.parse(uiPrompts);
         setFiles(PromptFiles);
         setSelectedFile('app/page.tsx');
-        console.log(files)
         const nextjsExtraFiles = Object.entries(PromptFiles).map(([filepath, { code }]) => `  -  ${filepath}`);
         const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${template == 'nextjs' ? nextjsExtraFiles : ""}`]
 
@@ -165,8 +194,9 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                     content: msg
                 }
             ]
+            // console.log(newMessages)
             setMessages(newMessages);
-            onMessagesUpdate(workspace.id, messages)
+            onMessagesUpdate(workspace.id, newMessages);
         }
         setNewAiMessage("");
         setLoading(false);

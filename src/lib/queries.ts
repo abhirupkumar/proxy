@@ -149,6 +149,19 @@ export async function onShellCommand(shellCommand: string) {
         // });
     }
 }
+
+export async function onIdAndTitleUpdate(id: string, title: string, artifactId: string) {
+    await db.workspace.update({
+        where: {
+            id: id,
+        },
+        data: {
+            title: title,
+            artifactId: artifactId
+        }
+    })
+}
+
 export const getClerkClient = async () => {
     return await clerkClient();
 }
