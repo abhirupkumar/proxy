@@ -1,10 +1,6 @@
 import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
-import { groq } from '@/lib/groq';
-import { openai } from '@/lib/openai';
-import { RegexProcessor } from '@/lib/parse';
-import { onFileUpdate, onShellCommand } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { FunctionCallingMode, SchemaType, Tool } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
