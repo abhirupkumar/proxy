@@ -1,33 +1,23 @@
 "use client";
 
-import { Skeleton } from '@/components/ui/skeleton';
-import { useMessages } from '@/context/MessagesContext';
 import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import Colors from '@/data/Colors';
 import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
-import { getClerkClient, onFilesUpdate, updateWorkspace } from '@/lib/queries';
-import { FileItem, Step } from '@/lib/types';
-import { useUser } from '@clerk/nextjs';
+import { onFilesUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
 import axios from 'axios';
-import { ArrowRight, Loader, Loader2 } from 'lucide-react';
-import Image from 'next/image';
-import React, { useEffect, useRef, useState } from 'react'
+import { ArrowRight, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from "react-markdown";
 import ButtonLoader from '../button-loader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileExplorer } from '../file-explorer';
 import { CodeEditor } from '../code-editor';
 import { Preview } from '../preview';
 import { useWebContainer } from '@/hooks/use-web-container';
-import rehypeRaw from 'rehype-raw'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import crypto from "crypto";
-import { toolInvocation } from '@/lib/gemini';
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import styles from './_components/Markdown.module.scss';
-import removeMarkdown from 'markdown-to-text';
 
 interface Message {
     role: 'user' | "assistant",
@@ -44,12 +34,43 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
     const [action, setAction] = useState<string>("");
-    const [files, setFiles] = useState<FileSystem | null>(null);
+    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? null);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const webcontainer = useWebContainer();
+
+    const messageParser = new StreamingMessageParser({
+        callbacks: {
+            onRegexOpen: (data) => {
+                setAction("Generating Response");
+            },
+            onRegexClose: (data) => {
+                setAction("");
+            },
+            onActionOpen: (data) => {
+                if (data.action.type == "file") {
+                    const filePath = data.action.filePath
+                    setAction(`Editing ${filePath}`)
+                }
+            },
+            onActionClose: (data) => {
+                if (data.action.type == "file") {
+                    const filePath = data.action.filePath
+                    const newFiles = {
+                        ...files,
+                        [filePath]: {
+                            code: data.action.content
+                        }
+                    }
+                    setFiles(newFiles)
+                    setSelectedFile(filePath);
+                    onFilesUpdate(workspace.id, newFiles);
+                }
+            },
+        },
+    });
 
     useEffect(() => {
         setMessages(workspace.message);
@@ -59,8 +80,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     }, [workspace]);
 
     useEffect(() => {
-        if (loading) return;
-        if (messages?.length > 0) {
+        if (!loading && messages?.length > 0) {
             const role = messages[messages?.length - 1].role;
             if (role == 'user') {
                 if (messages?.length == 1) init();
@@ -102,36 +122,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         const nextjsExtraFiles = Object.entries(PromptFiles).map(([filepath, { code }]) => `  -  ${filepath}`);
         const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${template == 'nextjs' ? nextjsExtraFiles : ""}`]
 
-        const messageParser = new StreamingMessageParser({
-            callbacks: {
-                onRegexOpen: (data) => {
-                    setAction("Generating Response");
-                },
-                onRegexClose: (data) => {
-                    setAction("");
-                },
-                onActionOpen: (data) => {
-                    if (data.action.type == "file") {
-                        const filePath = data.action.filePath
-                        setAction(`Editing ${filePath}`)
-                    }
-                },
-                onActionClose: (data) => {
-                    if (data.action.type == "file") {
-                        const filePath = data.action.filePath
-                        setSelectedFile(filePath);
-                        const newFiles = {
-                            ...files,
-                            [filePath]: {
-                                code: data.action.content
-                            }
-                        }
-                        setFiles(newFiles)
-                        onFilesUpdate(workspace.id, newFiles);
-                    }
-                },
-            },
-        });
+        setMessages([...messages, { role: "assistant", content: "" }]);
 
         const response = await fetch("/api/chat", {
             method: "POST",
@@ -175,6 +166,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 }
             ]
             setMessages(newMessages);
+            onMessagesUpdate(workspace.id, messages)
         }
         setNewAiMessage("");
         setLoading(false);

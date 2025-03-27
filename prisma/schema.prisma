@@ -24,10 +24,11 @@ model User {
 }
 
 model Workspace {
-  id         String @id @default(uuid())
+  id         String  @id @default(uuid())
   message    Json
   llmmessage Json?
+  title      String?
   fileData   Json?
-  userId     String @db.Uuid
-  User       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String  @db.Uuid
+  User       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

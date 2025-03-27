@@ -123,6 +123,17 @@ export async function onFilesUpdate(id: string, files: any) {
     })
 }
 
+export async function onMessagesUpdate(id: string, messages: any) {
+    await db.workspace.update({
+        where: {
+            id: id,
+        },
+        data: {
+            message: messages
+        }
+    })
+}
+
 export async function onShellCommand(shellCommand: string) {
     //npm run build && npm run start
     const commands = shellCommand.split("&&");

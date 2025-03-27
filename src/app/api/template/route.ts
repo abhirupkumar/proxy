@@ -1,7 +1,4 @@
-import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import { BASE_PROMPT } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
-import { groq } from '@/lib/groq';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
