@@ -36,7 +36,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
     const [action, setAction] = useState<string>("");
-    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? null);
+    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? NextBasePrompt);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -104,7 +104,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     useEffect(() => {
         setMessages(workspace.message);
         setLlmMessages(workspace.llmmessage);
-        setFiles(workspace.fileData);
+        setFiles(workspace.fileData ?? NextBasePrompt);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
