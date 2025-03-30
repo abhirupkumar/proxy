@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     if (!user)
         return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
 
-    const { messages } = await req.json();
+    const { messages } = await req.json() as { messages: Message[] };
 
     try {
         // const result = await openai.chat.completions.create({
@@ -27,27 +27,6 @@ export async function POST(req: NextRequest) {
         //     stream: true,
         //     max_tokens: 8192,
         // })
-
-        const tools: Tool[] = [
-            {
-                functionDeclarations: [
-                    {
-                        name: "codeGeneration",
-                        description: "Generate code and response in the specified regex format.",
-                        parameters: {
-                            type: SchemaType.OBJECT,
-                            properties: {
-                                response: {
-                                    type: SchemaType.STRING,
-                                    description: "Regexs in the format mentioned in the system instruction"
-                                }
-                            },
-                            required: ["response"]
-                        }
-                    }
-                ]
-            }
-        ]
 
         const result = await gemini.generateContentStream({
             contents: messages,

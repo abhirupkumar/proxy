@@ -134,6 +134,18 @@ export async function onMessagesUpdate(id: string, messages: any) {
     })
 }
 
+export async function onTemplateUpdate(id: string, template: string) {
+
+    await db.workspace.update({
+        where: {
+            id: id,
+        },
+        data: {
+            template: template
+        }
+    })
+}
+
 export async function onShellCommand(shellCommand: string) {
     //npm run build && npm run start
     const commands = shellCommand.split("&&");

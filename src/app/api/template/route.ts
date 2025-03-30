@@ -1,7 +1,11 @@
 import { gemini } from '@/lib/gemini';
+import { currentUser } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+    const user = await currentUser();
+    if (!user)
+        return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
     const { prompt } = await req.json();
 
     try {

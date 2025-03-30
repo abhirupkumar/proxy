@@ -3,7 +3,7 @@
 import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
-import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
+import { onFilesUpdate, onIdAndTitleUpdate, onTemplateUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
 import axios from 'axios';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
@@ -33,10 +33,10 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const prompt = workspace.message[0].content;
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [messages, setMessages] = useState<Message[]>([]);
+    const [template, setTemplate] = useState<string | null>(workspace.template ?? null);
     const [newAiMessage, setNewAiMessage] = useState<string>("");
-    const [llmMessages, setLlmMessages] = useState<{ role: "user" | "assistant", content: string; }[]>([]);
     const [action, setAction] = useState<string>("");
-    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? NextBasePrompt);
+    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? null);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -46,7 +46,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const handleDownload = async () => {
         const zip = new JSZip();
 
-        const projectFolder = zip.folder('vite-react-typescript-starter');
+        const projectFolder = zip.folder(artifactId);
 
         Object.entries(files!).forEach(([filename, { code }]) => {
             projectFolder?.file(filename, code);
@@ -56,12 +56,13 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
 
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
-        link.download = 'vite-react-typescript-starter.zip';
+        link.download = artifactId + ".zip";
 
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
+
 
     const messageParser = new StreamingMessageParser({
         callbacks: {
@@ -85,13 +86,11 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             onActionClose: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
-                    console.log(files);
                     const oldFiles = files;
+                    console.log(oldFiles)
                     const newFiles = {
                         ...oldFiles,
-                        [filePath]: {
-                            code: data.action.content
-                        }
+                        [filePath]: { code: data.action.content }
                     }
                     setFiles(newFiles)
                     setSelectedFile(filePath);
@@ -102,19 +101,26 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     });
 
     useEffect(() => {
+        setTemplate(workspace.template ?? null)
         setMessages(workspace.message);
-        setLlmMessages(workspace.llmmessage);
-        setFiles(workspace.fileData ?? NextBasePrompt);
+        setFiles(workspace.fileData ?? null);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
 
     useEffect(() => {
         if (!loading && messages?.length > 0) {
+            if (messages[messages?.length - 1].role == "assistant") {
+                const msg = messages[messages?.length - 1].content;
+                if (msg.trim().length < 6) {
+                    let nmsg = messages;
+                    nmsg.pop();
+                    setMessages(nmsg);
+                }
+            }
             const role = messages[messages?.length - 1].role;
             if (role == 'user') {
-                if (messages?.length == 1) init();
-                else getAiResponse();
+                init();
             }
         }
     }, [messages, loading]);
@@ -124,7 +130,6 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             role: 'user',
             content: content
         }]);
-        setLlmMessages(x => [...x, { role: "user", content: content }])
         setUserInput('');
     }
 
@@ -135,35 +140,51 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         else return "Template Not Found!";
     }
 
-
     const init = async () => {
         setLoading(true);
-        // const res = await axios.post(`/api/template`, {
-        //     prompt: prompt
-        // });
-
-        // const { template } = res.data;
-        const template = "nextjs";
-        const uiPrompts = JSON.stringify(getBasePrompt(template));
+        let ntemplate = template ?? null;
+        if (template == null) {
+            setAction("Fetching Template");
+            const res = await axios.post(`/api/template`, {
+                prompt: prompt
+            });
+            const { template: template2 } = res.data;
+            ntemplate = template2
+            setTemplate(template2);
+            onTemplateUpdate(workspace.id, template2);
+        }
+        const uiPrompts = JSON.stringify(getBasePrompt(ntemplate!));
         const PromptFiles: FileSystem = JSON.parse(uiPrompts);
-        setFiles(PromptFiles);
-        setSelectedFile('app/page.tsx');
-        const nextjsExtraFiles = Object.entries(PromptFiles).map(([filepath, { code }]) => `  -  ${filepath}`);
-        const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${template == 'nextjs' ? nextjsExtraFiles : ""}`]
+        setAction("");
+        if (!files)
+            setFiles(PromptFiles);
+        const newFiles = files ?? PromptFiles;
+        const extraFiles = Object.entries(newFiles).map(([filepath, { code }]) => `  -  ${filepath}`);
+        const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${extraFiles}`]
+        const llmPrompt: Message[] = prompts.map(content => ({
+            role: "user",
+            content: content
+        }))
+        getAiResponse(llmPrompt);
+    }
 
-        setMessages([...messages, { role: "assistant", content: "" }]);
+    const getAiResponse = async (llmPrompt: Message[]) => {
+        setLoading(true);
 
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                messages: [...prompts, prompt].map(content => ({
-                    role: "user",
-                    parts: [{ text: content }]
+                messages: [...llmPrompt, ...messages].map(msg => ({
+                    role: msg.role,
+                    parts: [{ text: msg.content }]
                 }))
             }),
             // signal: controller.signal
         });
+
+        let newMessages = messages;
+        newMessages.push({ role: 'assistant', content: "" });
 
         if (!response.body) {
             console.error("No response body received.");
@@ -181,68 +202,20 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             const text = decoder.decode(value, { stream: true });
             buffer += text;
             const parsedText = messageParser.parse("msg-id", buffer);
-            const cleanedText = parsedText.replace(/```[\w]*\n?|```/g, '');
+            let cleanedText = parsedText.replace(/```[\w]*\n?|```/g, '');
+            if (cleanedText.startsWith('html'))
+                cleanedText = cleanedText.slice(5)
             if (cleanedText.length > 0 && cleanedText.slice(-1) === " ") {
                 msg += cleanedText.trim() + " ";
             } else {
                 msg += cleanedText.trim();
             }
-            const newMessages: Message[] = [
-                ...messages.slice(-1),
-                {
-                    role: "assistant",
-                    content: msg
-                }
-            ]
-            // console.log(newMessages)
+            newMessages.pop();
+            newMessages.push({ role: 'assistant', content: msg });
             setMessages(newMessages);
             onMessagesUpdate(workspace.id, newMessages);
         }
         setNewAiMessage("");
-        setLoading(false);
-    }
-
-    const getAiResponse = async () => {
-        setLoading(true);
-        const response = await axios.post('/api/chat', {
-            messages: llmMessages.map(message => ({
-                role: message.role == "user" ? message.role : "model",
-                parts: [{ text: message.role == 'user' ? message.content : JSON.stringify(message.content) }]
-            }))
-        });
-        const result = JSON.parse(response.data.response);
-        const newFiles = result.files.map((file: { filepath: string; code: string }) => ({
-            [file.filepath]: {
-                code: file.code
-            }
-        }));
-        const formattedFiles = newFiles.reduce((acc: any, obj: any) => {
-            const key = Object.keys(obj)[0];
-            acc[key] = obj[key];
-            return acc;
-        }, {});
-
-        const modifiedFiles = Object.keys(formattedFiles).filter(key => Object.keys(files!).includes(key));
-        const newCreatedFiles = Object.keys(formattedFiles).filter(key =>
-            !Object.keys(files!).includes(key));
-
-        const newMessages: Message[] = [
-            ...messages,
-            {
-                role: "assistant",
-                content: result.explanation + (newCreatedFiles.length > 0 ? "\nFiles Created:\n" + newCreatedFiles.join("\n") : "") + (modifiedFiles.length > 0 ? "\nFiles Modified:\n" + modifiedFiles.join("\n") : "") + (result?.deletedFiles.length > 0 ? "\nFiles Deleted:\n" + result?.deletedFiles.join("\n") : "")
-            },
-        ]
-        let mergedFiles = { ...files, ...formattedFiles };
-        if (result.deletedFiles.length > 0) {
-            mergedFiles = Object.fromEntries(Object.entries(mergedFiles).filter(([key]) => !result.deletedFiles.includes(key)));
-        }
-        setFiles(mergedFiles)
-        setLlmMessages(x => [...x, { role: "assistant", content: result }])
-        let newllmMessages: any = [...llmMessages, { role: "assistant", content: result }]
-        await updateWorkspace(workspace.id, newMessages, newllmMessages, mergedFiles);
-        setLlmMessages(newllmMessages)
-        setMessages(newMessages);
         setLoading(false);
     }
 
@@ -260,7 +233,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 <ResizablePanel defaultSize={35} minSize={25}>
                     <div className='relative h-[calc(100vh-3rem)] flex flex-col p-5'>
                         <div className='flex-1 overflow-y-scroll no-scrollbar'>
-                            {messages?.map((message: any, index: number) => (
+                            {messages.length > 0 && messages?.map((message: any, index: number) => (
                                 <div key={index} className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
                                     {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
                                     <div className="whitespace-pre-wrap">
