@@ -5,7 +5,7 @@ import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
 import { onFilesUpdate, onIdAndTitleUpdate, onTemplateUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
 import axios from 'axios';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Download, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from "react-markdown";
 import ButtonLoader from '../button-loader';
@@ -36,7 +36,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const [template, setTemplate] = useState<string | null>(workspace.template ?? null);
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
-    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData ?? null);
+    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -85,28 +85,39 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             },
             onActionClose: (data) => {
                 if (data.action.type == "file") {
-                    const filePath = data.action.filePath
-                    const oldFiles = files;
-                    console.log(oldFiles)
-                    const newFiles = {
-                        ...oldFiles,
-                        [filePath]: { code: data.action.content }
+                    const filePath = data.action.filePath;
+                    let newFileContent = data.action.content;
+                    if (newFileContent.endsWith("```")) {
+                        newFileContent = newFileContent.slice(0, -3);
                     }
-                    setFiles(newFiles)
+                    newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
+
+                    setFiles((prevFiles) => {
+                        if (!prevFiles) return { [filePath]: { code: newFileContent } };
+                        return {
+                            ...prevFiles,
+                            [filePath]: { code: newFileContent }
+                        };
+                    });
                     setSelectedFile(filePath);
-                    onFilesUpdate(workspace.id, newFiles);
+                    onFilesUpdate(workspace.id, { ...files, [filePath]: { code: newFileContent } });
                 }
-            },
+            }
+
         },
     });
 
     useEffect(() => {
         setTemplate(workspace.template ?? null)
         setMessages(workspace.message);
-        setFiles(workspace.fileData ?? null);
+        setFiles(workspace.fileData);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
+
+    useEffect(() => {
+        console.log(files);
+    }, [files]);
 
     useEffect(() => {
         if (!loading && messages?.length > 0) {
@@ -182,6 +193,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             }),
             // signal: controller.signal
         });
+        messageParser.reset();
 
         let newMessages = messages;
         newMessages.push({ role: 'assistant', content: "" });
@@ -284,13 +296,15 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 <ResizablePanel defaultSize={65} minSize={25}>
                     <div className=''>
                         <Tabs defaultValue="code" className="h-full">
-                            <div className="border-b">
+                            <div className="flex border-b">
                                 <div className="container mx-auto px-4">
                                     <TabsList className="m-1">
                                         <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
                                         <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
                                     </TabsList>
                                 </div>
+
+                                <button className='ml-auto mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
                             </div>
 
                             <TabsContent value="code" className="m-0 h-full">
