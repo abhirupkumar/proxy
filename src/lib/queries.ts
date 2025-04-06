@@ -121,6 +121,7 @@ export async function onFilesUpdate(id: string, files: any) {
             fileData: files
         }
     })
+    console.log(files)
 }
 
 export async function onMessagesUpdate(id: string, messages: any) {

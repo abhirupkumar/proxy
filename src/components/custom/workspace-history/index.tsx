@@ -1,15 +1,18 @@
 "use client"
 
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
-import { getAllWorkspaces, getWorkspace } from '@/lib/queries';
+import { deleteWorkspace, getAllWorkspaces, getWorkspace } from '@/lib/queries';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import React, { useEffect, useState } from 'react'
+import DeleteButton from '../delete-button';
+import { useRouter } from 'next/navigation';
 
 const WorkspaceHistory = () => {
     const { isLoaded, isSignedIn, user } = useUser();
     const [workspaceList, setWorkspaceList] = useState<any>();
     const { toggleSidebar } = useSidebar();
+    const router = useRouter();
 
     useEffect(() => {
         if (isLoaded && isSignedIn) {
@@ -24,10 +27,15 @@ const WorkspaceHistory = () => {
 
     const truncate = (str: string | undefined | null) => {
         if (!str) return "New Chat";
-        if (str.length > 20) {
-            return str.substr(0, 20) + '...';
+        if (str.length > 23) {
+            return str.substr(0, 23) + '...';
         }
         return str;
+    }
+
+    const handleDelete = async (id: string) => {
+        await deleteWorkspace(id);
+        router.push('/')
     }
 
     return (
@@ -35,10 +43,11 @@ const WorkspaceHistory = () => {
             {workspaceList && workspaceList?.map((workspace: any, index: number) => {
                 return (
                     <SidebarMenuItem key={index}>
-                        <SidebarMenuButton asChild>
-                            <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className=''>
-                                {truncate(workspace.message[0].content)}
+                        <SidebarMenuButton className='flex'>
+                            <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className='flex-1'>
+                                {truncate(workspace.title ?? workspace.message[0].content)}
                             </Link>
+                            <DeleteButton onClick={() => handleDelete(workspace.id)} />
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 )

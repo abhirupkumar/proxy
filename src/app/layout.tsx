@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers";
+// import { SandpackCSS } from "@/components/custom/sandpackcss";
 
 export const metadata: Metadata = {
   title: "Proxy",
@@ -20,6 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      {/* <head> <SandpackCSS /></head> */}
       <body
         className={`${font.className} overflow-hidden`}
       >

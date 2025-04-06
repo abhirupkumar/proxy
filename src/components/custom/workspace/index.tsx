@@ -13,12 +13,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FileExplorer } from '../file-explorer';
 import { CodeEditor } from '../code-editor';
 import { Preview } from '../preview';
-import { useWebContainer } from '@/hooks/use-web-container';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import styles from './_components/Markdown.module.scss';
 import JSZip from 'jszip';
+import {
+    SandpackProvider,
+    SandpackLayout,
+    SandpackPreview,
+    SandpackCodeEditor,
+    SandpackFileExplorer,
+    FileTabs
+} from "@codesandbox/sandpack-react";
+import ErrorMessage from '../error-message';
+import SandpackViewer from '../sandpack-viewer';
 
 interface Message {
     role: 'user' | "assistant",
@@ -37,27 +46,39 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
     const [files, setFiles] = useState<FileSystem | null>(workspace.fileData);
+    const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
-    const [selectedFile, setSelectedFile] = useState<string | null>(null);
+    const [sandboxClient, setSandboxClient] = useState<any>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const webcontainer = useWebContainer();
+    const [fileData, setFileData] = useState<any>(null);
+
+    useEffect(() => {
+        setTemplate(workspace.template ?? null)
+        setMessages(workspace.message);
+        setFiles(workspace.fileData);
+        setArtifactId(workspace.artifactId ?? "proxy-web-app");
+        setLoading(false);
+    }, [workspace]);
+
+    // useEffect(() => {
+    //     const newFileData: any = {};
+    //     Object.entries(files!).forEach(([filename, { code }]: [filename: string, { code: string }]) => {
+    //         newFileData[filename] = code;
+    //     });
+    //     setFileData(newFileData);
+    // }, [files]);
 
     const handleDownload = async () => {
         const zip = new JSZip();
-
         const projectFolder = zip.folder(artifactId);
-
         Object.entries(files!).forEach(([filename, { code }]) => {
             projectFolder?.file(filename, code);
         });
-
         const content = await zip.generateAsync({ type: 'blob' });
-
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
         link.download = artifactId + ".zip";
-
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -93,14 +114,11 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                     newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
 
                     setFiles((prevFiles) => {
-                        if (!prevFiles) return { [filePath]: { code: newFileContent } };
-                        return {
-                            ...prevFiles,
-                            [filePath]: { code: newFileContent }
-                        };
+                        const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
+
+                        return updatedFiles;
                     });
-                    setSelectedFile(filePath);
-                    onFilesUpdate(workspace.id, { ...files, [filePath]: { code: newFileContent } });
+                    setIsFilesUpdated(true);
                 }
             }
 
@@ -108,16 +126,11 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     });
 
     useEffect(() => {
-        setTemplate(workspace.template ?? null)
-        setMessages(workspace.message);
-        setFiles(workspace.fileData);
-        setArtifactId(workspace.artifactId ?? "proxy-web-app");
-        setLoading(false);
-    }, [workspace]);
-
-    useEffect(() => {
-        console.log(files);
-    }, [files]);
+        if (isFilesUpdated) {
+            onFilesUpdate(workspace.id, files)
+            setIsFilesUpdated(false);
+        }
+    }, [isFilesUpdated])
 
     useEffect(() => {
         if (!loading && messages?.length > 0) {
@@ -153,17 +166,18 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
 
     const init = async () => {
         setLoading(true);
-        let ntemplate = template ?? null;
-        if (template == null) {
-            setAction("Fetching Template");
-            const res = await axios.post(`/api/template`, {
-                prompt: prompt
-            });
-            const { template: template2 } = res.data;
-            ntemplate = template2
-            setTemplate(template2);
-            onTemplateUpdate(workspace.id, template2);
-        }
+        // let ntemplate = template ?? null;
+        let ntemplate = "react";
+        // if (template == null) {
+        //     setAction("Fetching Template");
+        //     const res = await axios.post(`/api/template`, {
+        //         prompt: prompt
+        //     });
+        //     const { template: template2 } = res.data;
+        //     ntemplate = template2
+        //     setTemplate(template2);
+        //     onTemplateUpdate(workspace.id, template2);
+        // }
         const uiPrompts = JSON.stringify(getBasePrompt(ntemplate!));
         const PromptFiles: FileSystem = JSON.parse(uiPrompts);
         setAction("");
@@ -294,30 +308,18 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 </ResizablePanel>
                 <ResizableHandle />
                 <ResizablePanel defaultSize={65} minSize={25}>
-                    <div className=''>
-                        <Tabs defaultValue="code" className="h-full">
+                    <div className='flex flex-col h-full'>
+                        <Tabs defaultValue="code" className="h-full flex flex-col">
                             <div className="flex border-b">
-                                <div className="container mx-auto px-4">
-                                    <TabsList className="m-1">
-                                        <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
-                                        <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
-                                    </TabsList>
-                                </div>
+                                <TabsList className="my-1 mx-4">
+                                    <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
+                                    <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
+                                </TabsList>
 
                                 <button className='ml-auto mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
                             </div>
 
-                            <TabsContent value="code" className="m-0 h-full">
-                                {files == null ? <div className='w-full h-full flex gap-1 items-center justify-center text-lg'><Loader2 className='w-5 h-5 animate-spin' />{" Generating"}</div> :
-                                    <div className="grid grid-cols-[220px_1fr] h-full">
-                                        {files && <FileExplorer onFileSelect={setSelectedFile} fileSystem={files} />}
-                                        {files && <CodeEditor filePath={selectedFile} fileSystem={files} />}
-                                    </div>}
-                            </TabsContent>
-
-                            <TabsContent value="preview" className="m-0 h-full">
-                                <Preview files={files} webcontainer={webcontainer!} />
-                            </TabsContent>
+                            {files != null && <SandpackViewer files={files} />}
                         </Tabs>
                     </div>
                 </ResizablePanel>

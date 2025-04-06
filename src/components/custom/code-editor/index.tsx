@@ -3,14 +3,17 @@
 import { Editor, type Monaco } from "@monaco-editor/react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { FileText } from "lucide-react";
+import { Cross, FileText, X } from "lucide-react";
 import Image from "next/image";
 
 interface FileExplorerProps {
-    filePath: string | null;
+    selectedFile: string | null;
     fileSystem: FileSystem;
+    selectedFiles: string[];
+    setSelectedFile: Dispatch<SetStateAction<string | null>>;
+    setSelectedFiles: Dispatch<SetStateAction<string[]>>;
 }
 
 interface FileData {
@@ -21,7 +24,7 @@ interface FileSystem {
     [key: string]: FileData;
 }
 
-export function CodeEditor({ filePath, fileSystem }: FileExplorerProps) {
+export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelectedFile, setSelectedFiles }: FileExplorerProps) {
     const { resolvedTheme } = useTheme();
     const editorRef = useRef<any>(null)
     const monacoRef = useRef<any>(null)
@@ -35,7 +38,7 @@ export function CodeEditor({ filePath, fileSystem }: FileExplorerProps) {
         }
     }, [resolvedTheme])
 
-    if (!filePath) {
+    if (!selectedFile) {
         return (
             <div className="flex items-center justify-center h-full bg-card text-muted-foreground">
                 Select a file to view its contents
@@ -91,24 +94,38 @@ export function CodeEditor({ filePath, fileSystem }: FileExplorerProps) {
         }
     };
 
+    const removeFilePath = (fullpath: string) => {
+        setSelectedFiles(selectedFiles.filter((file) => file !== fullpath));
+        if (selectedFile == fullpath) {
+            setSelectedFile(selectedFiles[selectedFiles.length - 1]);
+        }
+    }
+
     return (
         <ScrollArea className="h-full">
             <div className="h-full pt-4">
-                <div
-                    className={clsx(
-                        "flex items-center px-4 py-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
-                    )}
-                >
-                    {getFileLanguage(filePath) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(filePath)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
-                    <span className="text-sm font-semibold">{filePath}</span>
+                <div className="flex gap-x-3 overflow-y-auto">
+                    {selectedFiles.map((filepath, index) => <div
+                        key={index}
+                        className={clsx(
+                            "flex items-center px-4 py-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
+                        )}
+                    >
+                        <button className="flex" onClick={() => setSelectedFile(filepath)}>
+                            {getFileLanguage(filepath) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(filepath)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
+                            <span className="text-sm font-semibold hover:text-primary">{filepath}</span>
+                        </button>
+                        <button onClick={() => removeFilePath(filepath)}>
+                            <X className="h-3 w-3 mt-1 ml-1 hover:text-primary" /></button>
+                    </div>)}
                 </div>
                 <Editor
                     height="calc(100vh - 5rem)"
-                    defaultLanguage={getLanguage(filePath)}
-                    language={getLanguage(filePath)}
-                    value={getFileContent(filePath)}
+                    defaultLanguage={getLanguage(selectedFile)}
+                    language={getLanguage(selectedFile)}
+                    value={getFileContent(selectedFile)}
                     theme={editorTheme}
-                    path={filePath}
+                    path={selectedFile}
                     options={{
                         readOnly: true,
                         minimap: { enabled: true },

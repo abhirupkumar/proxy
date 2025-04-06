@@ -2,12 +2,15 @@
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, FolderOpen, FileCode, File, FileText } from "lucide-react";
-import { useState } from "react";
+import { Dispatch, SetStateAction, useState } from "react";
 import clsx from "clsx";
 import Image from "next/image";
 
 interface FileExplorerProps {
-    onFileSelect: (path: string) => void;
+    selectedFile: string | null;
+    selectedFiles: string[];
+    setSelectedFile: Dispatch<SetStateAction<string | null>>;
+    setSelectedFiles: Dispatch<SetStateAction<string[]>>;
     fileSystem: FileSystem;
 }
 
@@ -19,11 +22,10 @@ interface FileSystem {
     [key: string]: FileData;
 }
 
-export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
+export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, setSelectedFiles, fileSystem }: FileExplorerProps) {
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
         new Set(["src"])
     );
-    const [selectedFile, setSelectedFile] = useState<string | null>(null);
 
     const createFileTree = () => {
         const tree: Record<string, any> = {};
@@ -65,7 +67,11 @@ export function FileExplorer({ onFileSelect, fileSystem }: FileExplorerProps) {
 
     const handleFileSelect = (fullPath: string) => {
         setSelectedFile(fullPath);
-        onFileSelect(fullPath);
+        if (!selectedFiles.includes(fullPath)) {
+            setSelectedFiles((prev) => [
+                ...prev, fullPath
+            ]);
+        }
     };
 
     const getFileLanguage = (path: string) => {
