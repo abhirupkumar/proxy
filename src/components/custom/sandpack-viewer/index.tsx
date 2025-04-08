@@ -1,24 +1,17 @@
 "use client";
 
 import { TabsContent } from '@/components/ui/tabs';
-import { SandpackCodeEditor, SandpackFileExplorer, SandpackLayout, SandpackPreview, SandpackProvider } from '@codesandbox/sandpack-react';
+import { SandpackProvider } from '@codesandbox/sandpack-react';
 import { useTheme } from 'next-themes';
 import React, { useState } from 'react'
-import ErrorMessage from '../error-message';
-import { amethyst } from '@codesandbox/sandpack-themes';
 import { CodeEditor } from '../code-editor';
 import { FileExplorer } from '../file-explorer';
-import { ScrollArea } from '@radix-ui/react-scroll-area';
 import { Preview } from '../preview';
-
-interface FileSystem {
-    [key: string]: { code: string }
-}
+import { FileSystem, useFileMessage } from '@/context/FileMessageContext';
 
 const SandpackViewer = ({ files }: { files: FileSystem }) => {
     const { resolvedTheme } = useTheme();
-    const [selectedFile, setSelectedFile] = useState<string | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const { selectedFile, setSelectedFile, selectedFiles, setSelectedFiles } = useFileMessage();
     return (
         <SandpackProvider
             theme={resolvedTheme == 'dark' ? "dark" : undefined}

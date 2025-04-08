@@ -37,7 +37,7 @@ export function Preview({ files }: PreviewFrameProps) {
     }, [iframe.current?.src]);
 
     useEffect(() => {
-        const unsubscribe = listen((message: SandpackMessage) => {
+        const unsubscribe = listen((message: any) => {
             if (message.type == 'start') {
                 setState("Starting Development Server...")
             }
@@ -50,9 +50,12 @@ export function Preview({ files }: PreviewFrameProps) {
             if (message.type == 'status' && message.status == 'evaluating') {
                 setState("Evaluating...")
             }
-            if (message.type == 'success') {
+            if (message.type == 'done') {
                 setLoading(false);
                 setState("")
+            }
+            if (message?.type == 'action') {
+                setError(message.message);
             }
         });
 

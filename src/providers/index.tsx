@@ -2,7 +2,7 @@
 
 import React from 'react'
 import { ThemeProvider as NextThemesProvider } from 'next-themes'
-import { MessagesProvider } from '@/context/MessagesContext'
+import { FileMessageProvider } from '@/context/FileMessageContext'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { SidebarProvider } from '@/components/ui/sidebar'
@@ -15,16 +15,16 @@ export function Provider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
 
     return <ClerkProvider appearance={{ baseTheme: dark }}>
-        <MessagesProvider>
-            <NextThemesProvider //dark mode
-                {...props}
-            >
+        <NextThemesProvider //dark mode
+            {...props}
+        >
+            <FileMessageProvider>
                 <Header />
                 <SidebarProvider defaultOpen={false}>
                     <AppSidebar />
                     {children}
                 </SidebarProvider>
-            </NextThemesProvider>
-        </MessagesProvider>
+            </FileMessageProvider>
+        </NextThemesProvider>
     </ClerkProvider>
 }

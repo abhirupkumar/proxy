@@ -17,27 +17,19 @@ import JSZip from 'jszip';
 import SandpackViewer from '../sandpack-viewer';
 import { v4 as uuidv4 } from 'uuid'
 import { useRouter } from 'next/navigation';
-
-interface Message {
-    role: 'user' | "assistant",
-    content: string
-}
-
-interface FileSystem {
-    [key: string]: { code: string }
-}
+import { Message, useFileMessage } from '@/context/FileMessageContext';
 
 const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
-    const [messages, setMessages] = useState<Message[]>([]);
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
-    const [files, setFiles] = useState<FileSystem | null>(workspace.fileData);
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const abortControllerRef = useRef<AbortController | null>(null);
     const router = useRouter();
+
+    const { messages, setMessages, files, setFiles, handleFileSelect } = useFileMessage();
 
     useEffect(() => {
         setMessages(workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map((msg: any) => ({
@@ -99,6 +91,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
 
                         return updatedFiles;
                     });
+                    handleFileSelect(filePath);
                     setIsFilesUpdated(true);
                 }
             }
@@ -138,13 +131,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             role: 'user',
             content: content
         }]);
-    }
-
-    const getBasePrompt = (template: string) => {
-        if (template == 'react') return ReactBasePrompt;
-        else if (template == 'node') return NodeBasePrompt;
-        else if (template == 'nextjs') return NextBasePrompt;
-        else return "Template Not Found!";
+        setLoading(false);
     }
 
     const init = async () => {

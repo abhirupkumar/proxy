@@ -40,7 +40,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
 
     if (!selectedFile) {
         return (
-            <div className="flex items-center justify-center h-full bg-card text-muted-foreground">
+            <div className="flex items-center justify-center w-full h-[calc(100vh-9rem)] bg-card text-muted-foreground">
                 Select a file to view its contents
             </div>
         );

@@ -1,4 +1,3 @@
-import CodeView from '@/components/custom/codeview';
 import WorkspacePage from '@/components/custom/workspace';
 import { getWorkspace } from '@/lib/queries';
 import { auth, clerkClient, currentUser } from '@clerk/nextjs/server';
