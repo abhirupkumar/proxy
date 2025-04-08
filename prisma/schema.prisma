@@ -24,12 +24,20 @@ model User {
 }
 
 model Workspace {
-  id         String  @id @default(uuid())
-  message    Json
-  template   String?
+  id         String    @id @default(uuid()) @db.Uuid
   title      String?
   artifactId String?
   fileData   Json?
-  userId     String  @db.Uuid
-  User       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String    @db.Uuid
+  Messages   Message[]
+  User       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Message {
+  id          String    @id @default(uuid())
+  role        String
+  content     String
+  createdAt   DateTime  @default(now())
+  workspaceId String    @db.Uuid
+  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }

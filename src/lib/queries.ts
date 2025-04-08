@@ -1,5 +1,6 @@
 "use server";
 
+import { ReactBasePrompt } from "@/data/BasePrompts";
 import { db } from "@/lib/db";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 
@@ -29,12 +30,18 @@ export const getUser = async () => {
     }
 }
 
-export const createWorkspace = async (messages: any, user: any) => {
+export const createWorkspace = async (messages: { role: string, content: string }, user: any) => {
     try {
         const workspace = await db.workspace.create({
             data: {
-                message: [messages],
                 userId: user.id,
+                fileData: ReactBasePrompt,
+                Messages: {
+                    create: {
+                        role: messages.role,
+                        content: messages.content
+                    }
+                }
             },
         });
         return workspace;
@@ -44,17 +51,20 @@ export const createWorkspace = async (messages: any, user: any) => {
     }
 }
 
-export const getWorkspace = async (id: any) => {
+export const getWorkspace = async (id: string) => {
     try {
         const workspace = await db.workspace.findUnique({
             where: {
                 id: id,
             },
+            include: {
+                Messages: true,
+            },
         });
-        console.log(id)
         return workspace;
     }
     catch (error: any) {
+        console.log(error)
         return null;
     }
 }
@@ -67,6 +77,14 @@ export const getAllWorkspaces = async (userId: string) => {
                     clerkId: userId,
                 }
             },
+            include: {
+                Messages: {
+                    select: {
+                        role: true,
+                        content: true,
+                    }
+                },
+            }
         });
         return workspaces;
     }
@@ -124,27 +142,33 @@ export async function onFilesUpdate(id: string, files: any) {
     console.log(files)
 }
 
-export async function onMessagesUpdate(id: string, messages: any) {
-    await db.workspace.update({
-        where: {
-            id: id,
-        },
-        data: {
-            message: messages
-        }
-    })
-}
-
-export async function onTemplateUpdate(id: string, template: string) {
-
-    await db.workspace.update({
-        where: {
-            id: id,
-        },
-        data: {
-            template: template
-        }
-    })
+export async function onMessagesUpdate(id: string | null, role: string, content: string, workspaceId: string) {
+    if (id == null) {
+        await db.message.create({
+            data: {
+                role: role,
+                content: content,
+                workspaceId: workspaceId
+            }
+        })
+    }
+    else {
+        await db.message.upsert({
+            where: {
+                id: id,
+            },
+            update: {
+                role: role,
+                content: content
+            },
+            create: {
+                id: id,
+                role: role,
+                content: content,
+                workspaceId: workspaceId
+            }
+        })
+    }
 }
 
 export async function onShellCommand(shellCommand: string) {

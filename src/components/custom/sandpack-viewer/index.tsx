@@ -8,6 +8,8 @@ import ErrorMessage from '../error-message';
 import { amethyst } from '@codesandbox/sandpack-themes';
 import { CodeEditor } from '../code-editor';
 import { FileExplorer } from '../file-explorer';
+import { ScrollArea } from '@radix-ui/react-scroll-area';
+import { Preview } from '../preview';
 
 interface FileSystem {
     [key: string]: { code: string }
@@ -25,7 +27,8 @@ const SandpackViewer = ({ files }: { files: FileSystem }) => {
                     "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
                 ],
                 activeFile: "/src/App.tsx",
-                autorun: true
+                autorun: true,
+                autoReload: true,
             }}
             template="react-ts"
             className='h-full flex-1 flex-grow !text-sm'
@@ -35,46 +38,47 @@ const SandpackViewer = ({ files }: { files: FileSystem }) => {
             }}
             suppressHydrationWarning={false}
         >
-            <SandpackLayout className='flex flex-col'>
-                <TabsContent value="code" className="m-0 h-full">
-                    <div className="grid grid-cols-[220px_1fr] h-full bg-background">
-                        {files && <FileExplorer selectedFile={selectedFile} setSelectedFile={setSelectedFile} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} fileSystem={files} />}
-                        {files && <CodeEditor selectedFile={selectedFile} setSelectedFile={setSelectedFile} fileSystem={files} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} />}
-                        {/* <SandpackFileExplorer
-                            className='overflow-y-scroll'
+            {/* <SandpackLayout className='flex flex-col'> */}
+            <div className='flex flex-col'>
+                <TabsContent value="code" className="m-0 h-full w-full flex bg-background">
+                    {files && <FileExplorer selectedFile={selectedFile} setSelectedFile={setSelectedFile} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} fileSystem={files} />}
+                    {files && <CodeEditor selectedFile={selectedFile} setSelectedFile={setSelectedFile} fileSystem={files} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} />}
+                    {/* <ScrollArea>
+                        <SandpackFileExplorer
+                            className='overflow-y-scroll h-[calc(100vh-7rem)]'
                             autoHiddenFiles={true}
                             initialCollapsedFolder={undefined} />
-                        <SandpackCodeEditor
-                            style={{
-                                minHeight: '100%',
-                                maxHeight: '100%',
-                                overflow: 'scroll',
-                            }}
-                            showLineNumbers={true}
-                            showTabs
-                            showInlineErrors
-                            wrapContent
-                            closableTabs
-                            readOnly
-                            className='h-[calc(100vh-7rem)] !border-l !text-sm' /> */}
-
-                    </div>
+                    </ScrollArea>
+                    <SandpackCodeEditor
+                        style={{
+                            minHeight: '100%',
+                            maxHeight: '100%',
+                            overflow: 'scroll',
+                        }}
+                        showLineNumbers={true}
+                        showTabs={true}
+                        showInlineErrors={true}
+                        wrapContent={true}
+                        closableTabs={true}
+                        readOnly={true}
+                        showReadOnly={true}
+                        className='h-[calc(100vh-7rem)] !border-l !text-sm' /> */}
                 </TabsContent>
 
                 <TabsContent value="preview" className="m-0 h-full">
-                    {/* <Preview files={files} /> */}
-                    <SandpackPreview
+                    <Preview files={files} />
+                    {/* {files && <SandpackPreview
                         showOpenNewtab={true}
                         showNavigator={true}
                         showRefreshButton={true}
                         showRestartButton={true}
                         showOpenInCodeSandbox={false}
                         showSandpackErrorOverlay={true}
-                        className='h-[calc(100vh-7rem)]' />
-                    {<ErrorMessage />}
+                        className='h-[calc(100vh-7rem)] opacity-100' />}
+                    {<ErrorMessage />} */}
                 </TabsContent>
-
-            </SandpackLayout>
+            </div>
+            {/* </SandpackLayout> */}
         </SandpackProvider>
     )
 }

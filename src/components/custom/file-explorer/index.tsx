@@ -158,7 +158,7 @@ export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, set
     const fileTree = createFileTree();
 
     return (
-        <ScrollArea className="border-r h-[calc(100vh-3rem)] text-secondary-foreground">
+        <ScrollArea className="border-r h-[calc(100vh-3rem)] min-w-48 text-secondary-foreground">
             <div className="p-4 border-b border-gray-700">
                 <h2 className="font-semibold text-secondary-foreground/80">Explorer</h2>
             </div>

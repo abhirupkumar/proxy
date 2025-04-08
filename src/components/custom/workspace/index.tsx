@@ -3,31 +3,20 @@
 import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import Lookup from '@/data/Lookup';
 import { BASE_PROMPT } from '@/data/Prompt';
-import { onFilesUpdate, onIdAndTitleUpdate, onTemplateUpdate, onMessagesUpdate, updateWorkspace } from '@/lib/queries';
-import axios from 'axios';
+import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { ArrowRight, Download, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from "react-markdown";
 import ButtonLoader from '../button-loader';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileExplorer } from '../file-explorer';
-import { CodeEditor } from '../code-editor';
-import { Preview } from '../preview';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import styles from './_components/Markdown.module.scss';
 import JSZip from 'jszip';
-import {
-    SandpackProvider,
-    SandpackLayout,
-    SandpackPreview,
-    SandpackCodeEditor,
-    SandpackFileExplorer,
-    FileTabs
-} from "@codesandbox/sandpack-react";
-import ErrorMessage from '../error-message';
 import SandpackViewer from '../sandpack-viewer';
+import { v4 as uuidv4 } from 'uuid'
+import { useRouter } from 'next/navigation';
 
 interface Message {
     role: 'user' | "assistant",
@@ -39,35 +28,27 @@ interface FileSystem {
 }
 
 const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
-    const prompt = workspace.message[0].content;
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [messages, setMessages] = useState<Message[]>([]);
-    const [template, setTemplate] = useState<string | null>(workspace.template ?? null);
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
     const [files, setFiles] = useState<FileSystem | null>(workspace.fileData);
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
     const [userInput, setUserInput] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
-    const [sandboxClient, setSandboxClient] = useState<any>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const [fileData, setFileData] = useState<any>(null);
+    const router = useRouter();
 
     useEffect(() => {
-        setTemplate(workspace.template ?? null)
-        setMessages(workspace.message);
+        setMessages(workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map((msg: any) => ({
+            role: msg.role,
+            content: msg.content
+        })) ?? []);
         setFiles(workspace.fileData);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
 
-    // useEffect(() => {
-    //     const newFileData: any = {};
-    //     Object.entries(files!).forEach(([filename, { code }]: [filename: string, { code: string }]) => {
-    //         newFileData[filename] = code;
-    //     });
-    //     setFileData(newFileData);
-    // }, [files]);
 
     const handleDownload = async () => {
         const zip = new JSZip();
@@ -150,11 +131,13 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     }, [messages, loading]);
 
     const onGenerate = async (content: string) => {
+        setUserInput('');
+        setLoading(true);
+        await onMessagesUpdate(null, 'user', content, workspace.id);
         setMessages((prev: Message[]) => [...prev, {
             role: 'user',
             content: content
         }]);
-        setUserInput('');
     }
 
     const getBasePrompt = (template: string) => {
@@ -166,44 +149,12 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
 
     const init = async () => {
         setLoading(true);
-        // let ntemplate = template ?? null;
-        let ntemplate = "react";
-        // if (template == null) {
-        //     setAction("Fetching Template");
-        //     const res = await axios.post(`/api/template`, {
-        //         prompt: prompt
-        //     });
-        //     const { template: template2 } = res.data;
-        //     ntemplate = template2
-        //     setTemplate(template2);
-        //     onTemplateUpdate(workspace.id, template2);
-        // }
-        const uiPrompts = JSON.stringify(getBasePrompt(ntemplate!));
-        const PromptFiles: FileSystem = JSON.parse(uiPrompts);
-        setAction("");
-        if (!files)
-            setFiles(PromptFiles);
-        const newFiles = files ?? PromptFiles;
-        const extraFiles = Object.entries(newFiles).map(([filepath, { code }]) => `  -  ${filepath}`);
-        const prompts = [BASE_PROMPT, `You are required to write the code in ${template}. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${extraFiles}`]
-        const llmPrompt: Message[] = prompts.map(content => ({
-            role: "user",
-            content: content
-        }))
-        getAiResponse(llmPrompt);
-    }
-
-    const getAiResponse = async (llmPrompt: Message[]) => {
-        setLoading(true);
 
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                messages: [...llmPrompt, ...messages].map(msg => ({
-                    role: msg.role,
-                    parts: [{ text: msg.content }]
-                }))
+                workspaceId: workspace.id
             }),
             // signal: controller.signal
         });
@@ -221,13 +172,14 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
         const decoder = new TextDecoder();
         let msg = "";
         let buffer = "";
+        const messageId = uuidv4();
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
 
             const text = decoder.decode(value, { stream: true });
             buffer += text;
-            const parsedText = messageParser.parse("msg-id", buffer);
+            const parsedText = messageParser.parse(messageId, buffer);
             let cleanedText = parsedText.replace(/```[\w]*\n?|```/g, '');
             if (cleanedText.startsWith('html'))
                 cleanedText = cleanedText.slice(5)
@@ -236,11 +188,12 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             } else {
                 msg += cleanedText.trim();
             }
+            onMessagesUpdate(messageId, 'assistant', msg, workspace.id);
             newMessages.pop();
             newMessages.push({ role: 'assistant', content: msg });
             setMessages(newMessages);
-            onMessagesUpdate(workspace.id, newMessages);
         }
+        // router.refresh();
         setNewAiMessage("");
         setLoading(false);
     }
@@ -251,7 +204,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     };
 
     return (
-        <div className='w-full text-sm'>
+        <div className='w-full text-sm' suppressHydrationWarning>
             <ResizablePanelGroup
                 direction="horizontal"
                 className="max-w-full border-t md:min-w-[450px]"
@@ -308,7 +261,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 </ResizablePanel>
                 <ResizableHandle />
                 <ResizablePanel defaultSize={65} minSize={25}>
-                    <div className='flex flex-col h-full'>
+                    <div className='flex flex-col h-full w-auto'>
                         <Tabs defaultValue="code" className="h-full flex flex-col">
                             <div className="flex border-b">
                                 <TabsList className="my-1 mx-4">

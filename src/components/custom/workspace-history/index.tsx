@@ -45,7 +45,7 @@ const WorkspaceHistory = () => {
                     <SidebarMenuItem key={index}>
                         <SidebarMenuButton className='flex'>
                             <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className='flex-1'>
-                                {truncate(workspace.title ?? workspace.message[0].content)}
+                                {truncate(workspace.title ?? workspace.Messages[0].content)}
                             </Link>
                             <DeleteButton onClick={() => handleDelete(workspace.id)} />
                         </SidebarMenuButton>

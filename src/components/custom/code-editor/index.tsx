@@ -95,30 +95,49 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
     };
 
     const removeFilePath = (fullpath: string) => {
-        setSelectedFiles(selectedFiles.filter((file) => file !== fullpath));
+        const updatedFiles = selectedFiles.filter((file) => file !== fullpath);
+        setSelectedFiles(updatedFiles);
         if (selectedFile == fullpath) {
-            setSelectedFile(selectedFiles[selectedFiles.length - 1]);
+            console.log(selectedFiles[selectedFiles.length - 1]);
+            if (updatedFiles.length > 0)
+                setSelectedFile(updatedFiles[updatedFiles.length - 1]);
+            else setSelectedFile(null);
         }
     }
 
     return (
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-full flex-1">
             <div className="h-full pt-4">
-                <div className="flex gap-x-3 overflow-y-auto">
-                    {selectedFiles.map((filepath, index) => <div
-                        key={index}
-                        className={clsx(
-                            "flex items-center px-4 py-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
-                        )}
-                    >
-                        <button className="flex" onClick={() => setSelectedFile(filepath)}>
-                            {getFileLanguage(filepath) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(filepath)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
-                            <span className="text-sm font-semibold hover:text-primary">{filepath}</span>
-                        </button>
-                        <button onClick={() => removeFilePath(filepath)}>
-                            <X className="h-3 w-3 mt-1 ml-1 hover:text-primary" /></button>
-                    </div>)}
+                <div className="flex overflow-x-auto">
+                    {selectedFiles.map((filepath, index) => (
+                        <div
+                            key={index}
+                            className={clsx(
+                                "flex items-center p-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
+                            )}
+                        >
+                            <button className="flex" onClick={() => setSelectedFile(filepath)}>
+                                {getFileLanguage(filepath) !== 'txt' ? (
+                                    <Image
+                                        src={`/file-icons/${getFileLanguage(filepath)}.svg`}
+                                        height={14}
+                                        width={14}
+                                        alt="ts-file"
+                                        className="mr-2"
+                                    />
+                                ) : (
+                                    <FileText className="h-4 w-4 mr-2 text-blue-400" />
+                                )}
+                                <span className="text-sm font-semibold hover:text-primary">{filepath}</span>
+                            </button>
+                            <button onClick={() => removeFilePath(filepath)}>
+                                <X className="h-3 w-3 mt-1 ml-1 hover:text-primary" />
+                            </button>
+                        </div>
+                    ))}
                 </div>
+
+                {/* Editor */}
                 <Editor
                     height="calc(100vh - 5rem)"
                     defaultLanguage={getLanguage(selectedFile)}
@@ -138,7 +157,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
                         smoothScrolling: true,
                         cursorBlinking: 'smooth',
                         cursorSmoothCaretAnimation: 'on',
-                        roundedSelection: true
+                        roundedSelection: true,
                     }}
                 />
             </div>

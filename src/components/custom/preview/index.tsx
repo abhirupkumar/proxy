@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
-import { loadSandpackClient, SandboxSetup } from "@codesandbox/sandpack-client";
+import { loadSandpackClient, SandboxSetup, SandpackMessage } from "@codesandbox/sandpack-client";
 import { Nodebox } from "@codesandbox/nodebox";
-import { SandpackLayout, SandpackPreview, SandpackProvider } from "@codesandbox/sandpack-react";
+import { SandpackLayout, SandpackPreview, SandpackProvider, useSandpackClient, useSandpackNavigation, useSandpackShell } from "@codesandbox/sandpack-react";
 import { useTheme } from "next-themes";
 
 interface PreviewFrameProps {
@@ -20,83 +20,50 @@ export function Preview({ files }: PreviewFrameProps) {
     const [path, setPath] = useState("/");
     const [newPath, setNewPath] = useState("/");
     const [state, setState] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const { theme } = useTheme();
 
-    // useEffect(() => {
-    //     if (!sandpackRef.current) return;
+    const iframeRef = useRef<HTMLIFrameElement | null>(null);
+    const { sandpack, iframe, getClient, clientId, listen } = useSandpackClient();
+    const { status, runSandpack } = sandpack;
+    const { refresh } = useSandpackNavigation(clientId);
+    const { restart } = useSandpackShell(clientId);
 
-    //     async function setupSandpack() {
-    //         try {
-    //             const iframe = sandpackRef.current as HTMLIFrameElement;
-    //             if (!iframe) {
-    //                 return;
-    //             }
-    //             // const newFileData: any = {};
-    //             // Object.entries(files!).forEach(([filename, { code }]: [filename: string, { code: string }]) => {
-    //             //     newFileData[filename] = code;
-    //             // });
-    //             const content: SandboxSetup = {
-    //                 files,
-    //             };
-    //             const client: any = await loadSandpackClient(
-    //                 iframe,
-    //                 content
-    //             );
-    //             // console.log(client)
-    //             const codeSandboxUrl = await client?.getCodeSandboxURL();
-    //             setUrl("https://" + codeSandboxUrl.sandboxId + ".csb.app");
-    //             setState("Server is on.");
-    //         } catch (error) {
-    //             setError("Failed to load Preview.");
-    //             console.log(error);
-    //         }
-    //     }
+    useEffect(() => {
+        if (iframe.current?.src == "") {
+            runSandpack();
+        }
+    }, [iframe.current?.src]);
 
-    //     setupSandpack();
-    // }, []);
+    useEffect(() => {
+        const unsubscribe = listen((message: SandpackMessage) => {
+            if (message.type == 'start') {
+                setState("Starting Development Server...")
+            }
+            if (message.type == 'dependencies') {
+                setState("Installing Dependencies...")
+            }
+            if (message.type == 'status' && message.status == 'transpiling') {
+                setState("Transpiling...")
+            }
+            if (message.type == 'status' && message.status == 'evaluating') {
+                setState("Evaluating...")
+            }
+            if (message.type == 'success') {
+                setLoading(false);
+                setState("")
+            }
+        });
 
-    // useEffect(() => {
-    //     init();
-    // }, [])
-
-    // async function init() {
-    //     // Create a new Nodebox runtime to evaluate Node.js code.
-    //     const runtime = new Nodebox({
-    //         // Provide a reference to the iframe on the page
-    //         // that will mount the Nodebox runtime, allowing it to
-    //         // communicate with the rest of the application.
-    //         iframe: document.getElementById("nodebox-iframe") as HTMLIFrameElement,
-    //     });
-
-    //     // Establish a connection to the runtime.
-    //     await runtime.connect();
-
-    //     const newFileData: any = {};
-    //     Object.entries(files!).forEach(([filename, { code }]: [filename: string, { code: string }]) => {
-    //         newFileData[filename] = code;
-    //     });
-
-    //     // Populate the file system with a Next.js project.
-    //     await runtime.fs.init({
-    //         ...newFileData
-    //     });
-
-    //     const shell = runtime.shell.create();
-
-    //     const nextProcess = await shell.runCommand("next", ["dev"]);
-    //     console.log(nextProcess)
-
-    //     const previewInfo = await runtime.preview.getByShellId(nextProcess.id);
-    // console.log(previewInfo)
-    //     setUrl(previewInfo.url);
-    // }
+        return unsubscribe;
+    }, []);
 
     return (
-        <div className="h-full text-gray-400">
-            {/* <div className="h-full flex flex-col">
+        <div className="h-full text-gray-400 bg-background">
+            <div className="h-full flex flex-col">
                 <div className="border-b p-4 flex items-center gap-2">
-                    <Button size="icon" variant="outline" onClick={() => setPath("/")}>
+                    <Button size="icon" variant="outline" onClick={() => refresh()}>
                         <RefreshCw className="h-4 w-4" />
                     </Button>
                     <Input
@@ -108,19 +75,22 @@ export function Preview({ files }: PreviewFrameProps) {
                         className="font-mono text-sm"
                     />
                 </div>
-                <div className="flex-1 bg-background h-full">
+                <div className="flex-1 w-full h-[calc(100vh-7rem)] bg-white">
                     <iframe
-                        ref={sandpackRef} id="nodebox-iframe" className="hidden"></iframe>
-                    {url ? <iframe
-                        src={url + path}
-                        width={"100%"}
-                        height={"100%"}
-                        title="Preview"
-                        sandbox="allow-forms allow-modals allow-popups allow-presentation allow-same-origin allow-scripts allow-downloads allow-pointer-lock"
-                        allow="accelerometer; autoplay; camera; encrypted-media; fullscreen; geolocation; gyroscope; microphone; midi; clipboard-read; clipboard-write; payment; usb; vr; xr-spatial-tracking; screen-wake-lock; magnetometer; ambient-light-sensor; battery; gamepad; picture-in-picture; display-capture; bluetooth;" className="opacity-100"></iframe> : <div className="text-lg text-center w-full h-full my-auto">Loading...</div>}
+                        ref={iframe}
+                        title="Custom Preview"
+                        sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"
+                        className={`w-full opacity-100 h-[calc(100vh-10rem)] ${loading ? 'hidden' : ""}`}
+                    />
+                    {loading && (
+                        <div className="h-[calc(100vh-7rem)] flex items-center justify-center bg-white/80 backdrop-blur-sm text-black">
+                            <RefreshCw className="h-5 w-5 animate-spin" />
+                            <span className="ml-2 text-lg italic">{state}</span>
+                        </div>
+                    )}
                 </div>
-            </div> */}
-            <SandpackProvider
+            </div>
+            {/* <SandpackProvider
                 files={files}
                 template="react-ts"
                 options={{
@@ -141,7 +111,7 @@ export function Preview({ files }: PreviewFrameProps) {
                         showSandpackErrorOverlay={true}
                         className='h-[calc(100vh-7rem)]' />
                 </SandpackLayout>
-            </SandpackProvider>
+            </SandpackProvider> */}
         </div>
     );
 }

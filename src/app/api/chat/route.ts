@@ -1,11 +1,7 @@
-import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
 import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
-import { groq } from '@/lib/groq';
-import { openai } from '@/lib/openai';
-import { RegexProcessor } from '@/lib/parse';
+import { getWorkspace } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
-import { SchemaType, Tool } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 interface Message {
@@ -14,13 +10,27 @@ interface Message {
 }
 
 export async function POST(req: NextRequest) {
-    const user = await currentUser();
-    if (!user)
-        return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
-
-    const { messages } = await req.json() as { messages: Message[] };
-
     try {
+        const user = await currentUser();
+        if (!user)
+            return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
+
+        const { workspaceId } = await req.json();
+        const workspace = await getWorkspace(workspaceId);
+        if (!workspace) return NextResponse.json({ error: "Workspace cannot be found." }, { status: 402 });
+        const messages = workspace.Messages.map(msg => ({
+            role: msg.role,
+            parts: [{ text: msg.content }]
+        })) ?? [];
+        const files = workspace.fileData;
+        const extraFiles = Object.entries(files!).map(([filepath, { code }]) => `  -  ${filepath}`);
+        const prompts = [BASE_PROMPT, `You are required to write the code in react. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${extraFiles}`]
+        const llmPrompt = prompts.map(content => ({
+            role: "user",
+            parts: [{ text: content }]
+        }))
+        const newMessages = [...llmPrompt, ...messages]
+
         // const result = await openai.chat.completions.create({
         //     model: 'qwen/qwq-32b:free',
         //     messages: [{ role: "system", content: getSystemPrompt() }],
@@ -29,7 +39,7 @@ export async function POST(req: NextRequest) {
         // })
 
         const result = await gemini.generateContentStream({
-            contents: messages,
+            contents: newMessages,
             generationConfig: {
                 temperature: 0.5,
                 topP: 0.8,
