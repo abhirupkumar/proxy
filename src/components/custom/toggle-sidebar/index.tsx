@@ -1,11 +1,9 @@
-import { useSidebar } from '@/components/ui/sidebar';
-import { PanelsLeftBottom } from 'lucide-react';
-import React from 'react'
+import { ChevronsRight } from 'lucide-react';
 
 const ToggleSidebar = () => {
   return (
     <div className='mt-auto relative cursor-pointer m-2'>
-      <PanelsLeftBottom className='w-6' />
+      <ChevronsRight className='w-5' />
     </div>
   )
 }

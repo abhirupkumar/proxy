@@ -3,10 +3,13 @@ import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@cl
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import React from 'react';
 
 const Header = () => {
     const { theme } = useTheme();
+    const pathname = usePathname();
+    if (pathname != '/') return <></>;
     return (
         <div className='p-4 flex justify-between items-center'>
             <Link href="/">

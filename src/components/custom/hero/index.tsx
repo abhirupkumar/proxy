@@ -6,6 +6,8 @@ import { ArrowRight, Circle, Link, Loader2, Square } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react'
 import ButtonLoader from '../button-loader';
+import { Spotlight } from '@/components/ui/spotlight-new';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
@@ -28,9 +30,17 @@ const Hero = ({ user }: { user: any }) => {
 
     return (
         <div className='flex flex-col flex-1 items-center mt-36 xl:mt-52 gap-2 overflow-hidden px-6' suppressHydrationWarning>
+            <Spotlight />
             <h2 className='font-bold text-4xl'>{Lookup.HERO_HEADING}</h2>
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
-            <div className='p-5 border rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
+            <div className='p-5 border min-h-[6rem] rounded-xl max-w-2xl w-full mt-3 bg-secondary relative'>
+                <GlowingEffect
+                    spread={40}
+                    glow={true}
+                    disabled={false}
+                    proximity={64}
+                    inactiveZone={0.01}
+                />
                 <div className='flex gap-2'>
                     <textarea
                         onKeyDown={(e) => {
