@@ -69,6 +69,18 @@ export const getWorkspace = async (id: string) => {
     }
 }
 
+export const onCurrentUser = async () => {
+    const user = await currentUser();
+    if (user == null) return null;
+    const userData = await db.user.findUnique({
+        where: {
+            clerkId: user.id
+        }
+    })
+
+    return userData
+}
+
 export const getAllWorkspaces = async (userId: string) => {
     try {
         const workspaces = await db.workspace.findMany({
@@ -136,7 +148,8 @@ export async function onFilesUpdate(id: string, files: any) {
             id: id,
         },
         data: {
-            fileData: files
+            fileData: files,
+            isChangesPushed: false
         }
     })
     console.log(files)

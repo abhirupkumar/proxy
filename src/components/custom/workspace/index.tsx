@@ -22,8 +22,12 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
+import { GitHubConnectButton } from '../gitHub-connect-button';
+import { Skeleton } from '@/components/ui/skeleton';
 
-const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
+const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
+    const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
+    const [title, setTitle] = useState<string>("")
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
@@ -41,7 +45,9 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             role: msg.role,
             content: msg.content
         })) ?? []);
+        setIsChangesPushed(workspace.isChangesPushed)
         setFiles(workspace.fileData);
+        setTitle(workspace.title);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
@@ -71,6 +77,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             onRegexClose: (data) => {
                 if (artifactId == "proxy-web-app") {
                     setArtifactId(data.id);
+                    setTitle(data.title)
                     onIdAndTitleUpdate(workspace.id, data.title, data.id);
                 }
                 setAction("");
@@ -105,6 +112,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
 
     useEffect(() => {
         if (isFilesUpdated) {
+            setIsChangesPushed(false);
             onFilesUpdate(workspace.id, files)
             setIsFilesUpdated(false);
         }
@@ -264,13 +272,20 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 <ResizablePanel defaultSize={63} minSize={25}>
                     <div className='flex flex-col h-full w-auto'>
                         <Tabs defaultValue="code" className="h-full flex flex-col">
-                            <div className="flex border-b">
+                            <div className="flex border-b items-center justify-between">
                                 <TabsList className="my-2 mx-4 rounded-full">
                                     <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
                                     <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                 </TabsList>
-
-                                <button className='ml-auto mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
+                                <div className='flex gap-x-4'>
+                                    {!loading ? <GitHubConnectButton
+                                        workspaceId={workspace.id}
+                                        isConnected={!!dbUser.githubToken}
+                                        repoUrl={workspace.githubRepo?.repoUrl}
+                                        hasUnpushedChanges={isChangesPushed && !!workspace.githubRepo}
+                                    /> : <Skeleton className='w-6 h-6 rounded-full' />}
+                                    <button className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
+                                </div>
                             </div>
 
                             {files != null && <SandpackViewer files={files} />}
