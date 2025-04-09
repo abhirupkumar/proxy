@@ -18,6 +18,8 @@ import SandpackViewer from '../sandpack-viewer';
 import { v4 as uuidv4 } from 'uuid'
 import { useRouter } from 'next/navigation';
 import { Message, useFileMessage } from '@/context/FileMessageContext';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
 
 const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
@@ -28,6 +30,7 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
     const [loading, setLoading] = useState<boolean>(true);
     const abortControllerRef = useRef<AbortController | null>(null);
     const router = useRouter();
+    const { resolvedTheme } = useTheme();
 
     const { messages, setMessages, files, setFiles, handleFileSelect } = useFileMessage();
 
@@ -66,7 +69,6 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             onRegexClose: (data) => {
                 if (artifactId == "proxy-web-app") {
                     setArtifactId(data.id);
-                    console.log(data.id);
                     onIdAndTitleUpdate(workspace.id, data.title, data.id);
                 }
                 setAction("");
@@ -196,9 +198,10 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                 direction="horizontal"
                 className="max-w-full border-t md:min-w-[450px]"
             >
-                <ResizablePanel defaultSize={35} minSize={25}>
-                    <div className='relative h-[calc(100vh-3rem)] flex flex-col p-5'>
-                        <div className='flex-1 overflow-y-scroll no-scrollbar'>
+                <ResizablePanel defaultSize={37} minSize={25}>
+                    <div className='relative h-[100vh] flex flex-col p-3 items-center'>
+                        {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} className='mr-auto ml-3 mb-2' /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} className='mr-auto ml-3 mb-2' />}
+                        <div className='flex-1 overflow-y-scroll no-scrollbar max-w-[600px]'>
                             {messages.length > 0 && messages?.map((message: any, index: number) => (
                                 <div key={index} className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
                                     {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
@@ -247,13 +250,13 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                     </div>
                 </ResizablePanel>
                 <ResizableHandle />
-                <ResizablePanel defaultSize={65} minSize={25}>
+                <ResizablePanel defaultSize={63} minSize={25}>
                     <div className='flex flex-col h-full w-auto'>
                         <Tabs defaultValue="code" className="h-full flex flex-col">
                             <div className="flex border-b">
-                                <TabsList className="my-1 mx-4">
-                                    <TabsTrigger value="code" className="text-sm">Code</TabsTrigger>
-                                    <TabsTrigger value="preview" className="text-sm">Preview</TabsTrigger>
+                                <TabsList className="my-2 mx-4 rounded-full">
+                                    <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
+                                    <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                 </TabsList>
 
                                 <button className='ml-auto mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>

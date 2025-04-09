@@ -13,7 +13,7 @@ const AppSidebar = () => {
     const { theme } = useTheme();
     const { toggleSidebar } = useSidebar();
     return (
-        <Sidebar collapsible="offcanvas" >
+        <Sidebar collapsible="offcanvas">
             <SidebarHeader className='p-5'>
                 <Link href="/">
                     {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
@@ -34,7 +34,7 @@ const AppSidebar = () => {
             <SidebarFooter>
                 <SidebarFooterComponent />
             </SidebarFooter>
-            <SidebarRail className='h-fit mt-[5rem]'>
+            <SidebarRail className='h-full'>
                 <ToggleSidebar />
             </SidebarRail>
         </Sidebar>

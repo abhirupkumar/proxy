@@ -78,15 +78,15 @@ export function Preview({ files }: PreviewFrameProps) {
                         className="font-mono text-sm"
                     />
                 </div>
-                <div className="flex-1 w-full h-[calc(100vh-7rem)] bg-white">
+                <div className="flex-1 w-full h-[100vh] bg-white">
                     <iframe
                         ref={iframe}
                         title="Custom Preview"
                         sandbox="allow-modals allow-forms allow-popups allow-scripts allow-same-origin"
-                        className={`w-full opacity-100 h-[calc(100vh-10rem)] ${loading ? 'hidden' : ""}`}
+                        className={`w-full opacity-100 h-[100vh] ${loading ? 'hidden' : ""}`}
                     />
                     {loading && (
-                        <div className="h-[calc(100vh-7rem)] flex items-center justify-center bg-white/80 backdrop-blur-sm text-black">
+                        <div className="h-[100vh] flex items-center justify-center bg-white/80 backdrop-blur-sm text-black">
                             <RefreshCw className="h-5 w-5 animate-spin" />
                             <span className="ml-2 text-lg italic">{state}</span>
                         </div>
@@ -112,7 +112,7 @@ export function Preview({ files }: PreviewFrameProps) {
                         showRestartButton={true}
                         showOpenInCodeSandbox={false}
                         showSandpackErrorOverlay={true}
-                        className='h-[calc(100vh-7rem)]' />
+                        className='h-[100vh]' />
                 </SandpackLayout>
             </SandpackProvider> */}
         </div>
