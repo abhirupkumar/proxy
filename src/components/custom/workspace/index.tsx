@@ -20,6 +20,8 @@ import { useRouter } from 'next/navigation';
 import { Message, useFileMessage } from '@/context/FileMessageContext';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
+import Link from 'next/link';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 
 const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: string }) => {
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
@@ -200,7 +202,9 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
             >
                 <ResizablePanel defaultSize={37} minSize={25}>
                     <div className='relative h-[100vh] flex flex-col p-3 items-center'>
-                        {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} className='mr-auto ml-3 mb-2' /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} className='mr-auto ml-3 mb-2' />}
+                        <Link href="/" className='mr-auto ml-3 mb-2'>
+                            {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} />}
+                        </Link>
                         <div className='flex-1 overflow-y-scroll no-scrollbar max-w-[600px]'>
                             {messages.length > 0 && messages?.map((message: any, index: number) => (
                                 <div key={index} className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
@@ -231,7 +235,14 @@ const WorkspacePage = ({ workspace, sessionId }: { workspace: any, sessionId: st
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <div className='p-5 border rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
+                        <div className='p-5 border relative min-h-[6rem] rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
+                            <GlowingEffect
+                                spread={40}
+                                glow={true}
+                                disabled={false}
+                                proximity={64}
+                                inactiveZone={0.01}
+                            />
                             <div className='flex gap-2'>
                                 <textarea
                                     onKeyDown={(e) => {
