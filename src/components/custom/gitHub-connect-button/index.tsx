@@ -153,8 +153,8 @@ export function GitHubConnectButton({
     const getButtonText = () => {
         if (isLoading) return "Processing...";
         if (!isConnected) return "Connect GitHub";
-        if (repoUrl == "") return "Create New Repo";
-        if (hasUnpushedChanges) return "Push Changes to GitHub";
+        if (repoUrl == "") return "Create Repo";
+        if (hasUnpushedChanges) return "Push Changes";
         return "";
     };
 
