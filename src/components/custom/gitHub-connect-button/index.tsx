@@ -20,20 +20,22 @@ interface GitHubConnectButtonProps {
     isConnected?: boolean;
     repoUrl?: string;
     hasUnpushedChanges?: boolean;
+    workspaceTitle?: string;
 }
 
 export function GitHubConnectButton({
     workspaceId,
     isConnected = false,
     repoUrl,
-    hasUnpushedChanges = false
+    hasUnpushedChanges = false,
+    workspaceTitle = ""
 }: GitHubConnectButtonProps) {
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [isCreatingRepo, setIsCreatingRepo] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [repoName, setRepoName] = useState('');
-    const [repoDescription, setRepoDescription] = useState('');
+    const [repoName, setRepoName] = useState(workspaceTitle);
+    const [repoDescription, setRepoDescription] = useState('Repository for ' + repoName);
     const [isPrivate, setIsPrivate] = useState(true);
     const [error, setError] = useState('');
 
@@ -71,12 +73,15 @@ export function GitHubConnectButton({
         if (!isConnected) {
             // If not connected, start OAuth flow
             initiateGitHubAuth();
+        } else if (repoUrl == "") {
+            // If connected and has changes, push them
+            setOpen(true);
         } else if (hasUnpushedChanges) {
             // If connected and has changes, push them
             pushToGitHub();
         } else {
-            // If connected but want to create a new repo
-            setOpen(true);
+            // All done
+            setOpen(false);
         }
     };
 
@@ -148,8 +153,9 @@ export function GitHubConnectButton({
     const getButtonText = () => {
         if (isLoading) return "Processing...";
         if (!isConnected) return "Connect GitHub";
+        if (repoUrl == "") return "Create New Repo";
         if (hasUnpushedChanges) return "Push Changes to GitHub";
-        return "Create New Repository";
+        return "";
     };
 
     return (

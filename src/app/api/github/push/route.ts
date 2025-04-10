@@ -85,7 +85,7 @@ export async function POST(req: Request) {
                 path,
                 mode: '100644' as '100644', // Regular file
                 type: 'blob' as 'blob',
-                content: typeof content === 'string' ? content : JSON.stringify(content),
+                content: content.code as string,
             }));
 
             // Create a new tree
@@ -100,7 +100,7 @@ export async function POST(req: Request) {
             const newCommit = await octokit.git.createCommit({
                 owner: repoOwner,
                 repo: repoName,
-                message: 'Changed by Proxyaii.tech',
+                message: 'feat: Implement ' + workspace.title,
                 tree: newTree.data.sha,
                 parents: [latestCommitSha],
             });

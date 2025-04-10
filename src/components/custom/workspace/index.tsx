@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
-import { GitHubConnectButton } from '../gitHub-connect-button';
+import { GitHubConnectButton } from '../github-connect-button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
@@ -280,9 +280,10 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                                 <div className='flex gap-x-4'>
                                     {!loading ? <GitHubConnectButton
                                         workspaceId={workspace.id}
-                                        isConnected={!!dbUser.githubToken}
-                                        repoUrl={workspace.githubRepo?.repoUrl}
-                                        hasUnpushedChanges={isChangesPushed && !!workspace.githubRepo}
+                                        isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
+                                        repoUrl={workspace.githubRepo?.repoUrl ?? ""}
+                                        hasUnpushedChanges={!isChangesPushed}
+                                        workspaceTitle={title}
                                     /> : <Skeleton className='w-6 h-6 rounded-full' />}
                                     <button className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
                                 </div>

@@ -59,6 +59,7 @@ export const getWorkspace = async (id: string) => {
             },
             include: {
                 Messages: true,
+                githubRepo: true,
             },
         });
         return workspace;
@@ -214,4 +215,64 @@ export async function onIdAndTitleUpdate(id: string, title: string, artifactId: 
 
 export const getClerkClient = async () => {
     return await clerkClient();
+}
+
+export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: string, fileData: any) {
+    try {
+        // Get the default branch reference
+        const { data: refData } = await octokit.git.getRef({
+            owner,
+            repo,
+            ref: 'heads/main', // Using main as the default branch
+        });
+
+        const mainBranchSha = refData.object.sha;
+
+        // Get the tree that the commit points to
+        const { data: commitData } = await octokit.git.getCommit({
+            owner,
+            repo,
+            commit_sha: mainBranchSha,
+        });
+
+        const treeSha = commitData.tree.sha;
+
+        // Prepare files for the new tree
+        const files = Object.entries(fileData).map(([path, content]: [path: string, content: any]) => ({
+            path,
+            mode: '100644', // Regular file
+            type: 'blob',
+            content: content.code as string,
+        }));
+
+        // Create a new tree
+        const { data: newTree } = await octokit.git.createTree({
+            owner,
+            repo,
+            base_tree: treeSha,
+            tree: files,
+        });
+
+        // Create a commit
+        const { data: newCommit } = await octokit.git.createCommit({
+            owner,
+            repo,
+            message: 'Use tech stack Vite + React + Typescript',
+            tree: newTree.sha,
+            parents: [mainBranchSha],
+        });
+
+        // Update the reference
+        await octokit.git.updateRef({
+            owner,
+            repo,
+            ref: 'heads/main',
+            sha: newCommit.sha,
+        });
+
+        return true;
+    } catch (error) {
+        console.error('Error pushing initial code to repository:', error);
+        throw error;
+    }
 }

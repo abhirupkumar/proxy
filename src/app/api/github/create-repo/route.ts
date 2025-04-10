@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
 import { db } from '@/lib/db';
 import { Octokit } from '@octokit/rest';
+import { pushWorkspaceToRepo } from '@/lib/queries';
 
 export async function POST(req: Request) {
     try {
@@ -106,66 +107,5 @@ export async function POST(req: Request) {
     } catch (error) {
         console.error('Error in create-repo API:', error);
         return NextResponse.json({ error: 'Failed to create repository' }, { status: 500 });
-    }
-}
-
-// Helper function to push workspace data to a new repository
-async function pushWorkspaceToRepo(octokit: any, owner: string, repo: string, fileData: any) {
-    try {
-        // Get the default branch reference
-        const { data: refData } = await octokit.git.getRef({
-            owner,
-            repo,
-            ref: 'heads/main', // Using main as the default branch
-        });
-
-        const mainBranchSha = refData.object.sha;
-
-        // Get the tree that the commit points to
-        const { data: commitData } = await octokit.git.getCommit({
-            owner,
-            repo,
-            commit_sha: mainBranchSha,
-        });
-
-        const treeSha = commitData.tree.sha;
-
-        // Prepare files for the new tree
-        const files = Object.entries(fileData).map(([path, content]) => ({
-            path,
-            mode: '100644', // Regular file
-            type: 'blob',
-            content: typeof content === 'string' ? content : JSON.stringify(content),
-        }));
-
-        // Create a new tree
-        const { data: newTree } = await octokit.git.createTree({
-            owner,
-            repo,
-            base_tree: treeSha,
-            tree: files,
-        });
-
-        // Create a commit
-        const { data: newCommit } = await octokit.git.createCommit({
-            owner,
-            repo,
-            message: 'Initial commit from Proxyaii.tech',
-            tree: newTree.sha,
-            parents: [mainBranchSha],
-        });
-
-        // Update the reference
-        await octokit.git.updateRef({
-            owner,
-            repo,
-            ref: 'heads/main',
-            sha: newCommit.sha,
-        });
-
-        return true;
-    } catch (error) {
-        console.error('Error pushing initial code to repository:', error);
-        throw error;
     }
 }
