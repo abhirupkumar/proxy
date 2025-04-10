@@ -1,4 +1,3 @@
-// components/GitHubConnectButton.tsx
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -23,7 +22,7 @@ interface GitHubConnectButtonProps {
     workspaceTitle?: string;
 }
 
-export default function GithubConnectButton({
+export function GithubConnectButton({
     workspaceId,
     isConnected = false,
     repoUrl,
@@ -39,7 +38,7 @@ export default function GithubConnectButton({
     const [isPrivate, setIsPrivate] = useState(true);
     const [error, setError] = useState('');
 
-    // Function to initiate GitHub OAuth flow
+    // Function to initiate Github OAuth flow
     const initiateGitHubAuth = async () => {
         setIsLoading(true);
         try {
@@ -55,15 +54,15 @@ export default function GithubConnectButton({
             if (data.authUrl) {
                 // Store workspaceId in session storage to retrieve after OAuth
                 sessionStorage.setItem('github_connect_workspace', workspaceId);
-                // Redirect to GitHub authorization page
+                // Redirect to Github authorization page
                 window.location.href = data.authUrl;
             } else {
-                setError('Failed to initiate GitHub connection');
+                setError('Failed to initiate Github connection');
                 setIsLoading(false);
             }
         } catch (error) {
-            console.error('Error connecting to GitHub:', error);
-            setError('Failed to connect to GitHub');
+            console.error('Error connecting to Github:', error);
+            setError('Failed to connect to Github');
             setIsLoading(false);
         }
     };
@@ -120,7 +119,7 @@ export default function GithubConnectButton({
         }
     };
 
-    // Function to push code to GitHub
+    // Function to push code to Github
     const pushToGitHub = async () => {
         setIsLoading(true);
         try {
@@ -136,13 +135,13 @@ export default function GithubConnectButton({
 
             if (response.ok) {
                 // Show success notification
-                alert('Successfully pushed code to GitHub!');
+                alert('Successfully pushed code to Github!');
                 router.refresh(); // Refresh to update the button state
             } else {
                 setError(data.error || 'Failed to push code');
             }
         } catch (error) {
-            console.error('Error pushing to GitHub:', error);
+            console.error('Error pushing to Github:', error);
             setError('An unexpected error occurred');
         } finally {
             setIsLoading(false);
@@ -152,7 +151,7 @@ export default function GithubConnectButton({
     // Determine button text based on state
     const getButtonText = () => {
         if (isLoading) return "Processing...";
-        if (!isConnected) return "Connect GitHub";
+        if (!isConnected) return "Connect Github";
         if (repoUrl == "") return "Create Repo";
         if (hasUnpushedChanges) return "Push Changes";
         return "";
@@ -182,7 +181,7 @@ export default function GithubConnectButton({
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
-                        <DialogTitle>Create GitHub Repository</DialogTitle>
+                        <DialogTitle>Create Github Repository</DialogTitle>
                         <DialogDescription>
                             Create a new repository to store your code.
                         </DialogDescription>

@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
-import GithubConnectButton from '../github-connect-button';
+import { GithubConnectButton } from '../github-connect-button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
