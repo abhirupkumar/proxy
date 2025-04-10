@@ -22,7 +22,7 @@ import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 import { GlowingEffect } from '@/components/ui/glowing-effect';
-import { GitHubConnectButton } from '../github-connect-button';
+import { GithubConnectButton } from '../github-connect-button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
@@ -278,7 +278,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                                     <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                 </TabsList>
                                 <div className='flex gap-x-4'>
-                                    {!loading ? <GitHubConnectButton
+                                    {!loading ? <GithubConnectButton
                                         workspaceId={workspace.id}
                                         isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
                                         repoUrl={workspace.githubRepo?.repoUrl ?? ""}
