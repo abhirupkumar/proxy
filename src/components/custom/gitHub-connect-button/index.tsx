@@ -23,7 +23,7 @@ interface GitHubConnectButtonProps {
     workspaceTitle?: string;
 }
 
-export function GithubConnectButton({
+export default function GithubConnectButton({
     workspaceId,
     isConnected = false,
     repoUrl,
