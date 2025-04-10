@@ -1,8 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { HelpCircle, LogOut, Settings, ToggleLeft, Wallet } from 'lucide-react';
-import React from 'react'
+import { SignOutButton, useUser } from '@clerk/nextjs';
+import { HelpCircle, LogOut, Settings, Wallet } from 'lucide-react';
 import { ModeToggle } from '../mode-toggle';
-import { SignOutButton, UserButton, useUser } from '@clerk/nextjs';
 
 const SidebarFooterComponent = () => {
     const { user, isLoaded, isSignedIn } = useUser();

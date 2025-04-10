@@ -1,13 +1,12 @@
 "use client";
 
 import { TabsContent } from '@/components/ui/tabs';
+import { FileSystem, useFileMessage } from '@/context/FileMessageContext';
 import { SandpackProvider } from '@codesandbox/sandpack-react';
 import { useTheme } from 'next-themes';
-import React, { useState } from 'react'
 import { CodeEditor } from '../code-editor';
 import { FileExplorer } from '../file-explorer';
 import { Preview } from '../preview';
-import { FileSystem, useFileMessage } from '@/context/FileMessageContext';
 
 const SandpackViewer = ({ files }: { files: FileSystem }) => {
     const { resolvedTheme } = useTheme();

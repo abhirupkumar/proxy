@@ -1,12 +1,12 @@
 "use client"
 
 import { SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
-import { deleteWorkspace, getAllWorkspaces, getWorkspace } from '@/lib/queries';
+import { deleteWorkspace, getAllWorkspaces } from '@/lib/queries';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-import React, { useEffect, useState } from 'react'
-import DeleteButton from '../delete-button';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import DeleteButton from '../delete-button';
 
 const WorkspaceHistory = () => {
     const { isLoaded, isSignedIn, user } = useUser();

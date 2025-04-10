@@ -1,29 +1,27 @@
 "use client";
 
-import { NextBasePrompt, NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import Lookup from '@/data/Lookup';
-import { BASE_PROMPT } from '@/data/Prompt';
-import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
-import { ArrowRight, Download, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import ReactMarkdown from "react-markdown";
-import ButtonLoader from '../button-loader';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { GithubConnectButton } from '@/components/custom/github-connect-button';
+import { GlowingEffect } from '@/components/ui/glowing-effect';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Message, useFileMessage } from '@/context/FileMessageContext';
+import Lookup from '@/data/Lookup';
+import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
-import styles from './_components/Markdown.module.scss';
 import JSZip from 'jszip';
-import SandpackViewer from '../sandpack-viewer';
-import { v4 as uuidv4 } from 'uuid'
-import { useRouter } from 'next/navigation';
-import { Message, useFileMessage } from '@/context/FileMessageContext';
-import Image from 'next/image';
+import { ArrowRight, Download, Loader2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import Image from 'next/image';
 import Link from 'next/link';
-import { GlowingEffect } from '@/components/ui/glowing-effect';
-import { Skeleton } from '@/components/ui/skeleton';
-import { GithubConnectButton } from '@/components/ui/github-connect-button';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import ReactMarkdown from "react-markdown";
+import { v4 as uuidv4 } from 'uuid';
+import ButtonLoader from '../button-loader';
+import SandpackViewer from '../sandpack-viewer';
+import styles from './_components/Markdown.module.scss';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)

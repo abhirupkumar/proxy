@@ -1,13 +1,13 @@
 "use client";
 
+import { GlowingEffect } from '@/components/ui/glowing-effect';
+import { Spotlight } from '@/components/ui/spotlight-new';
 import Lookup from '@/data/Lookup';
 import { createWorkspace } from '@/lib/queries';
-import { ArrowRight, Circle, Link, Loader2, Square } from 'lucide-react';
+import { ArrowRight, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import React, { useState } from 'react'
+import { useState } from 'react';
 import ButtonLoader from '../button-loader';
-import { Spotlight } from '@/components/ui/spotlight-new';
-import { GlowingEffect } from '@/components/ui/glowing-effect';
 
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();

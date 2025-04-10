@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useSandpackClient, useSandpackNavigation, useSandpackShell } from "@codesandbox/sandpack-react";
 import { RefreshCw } from "lucide-react";
-import { loadSandpackClient, SandboxSetup, SandpackMessage } from "@codesandbox/sandpack-client";
-import { Nodebox } from "@codesandbox/nodebox";
-import { SandpackLayout, SandpackPreview, SandpackProvider, useSandpackClient, useSandpackNavigation, useSandpackShell } from "@codesandbox/sandpack-react";
 import { useTheme } from "next-themes";
+import { useEffect, useRef, useState } from "react";
 
 interface PreviewFrameProps {
-    // files: { [key: string]: { code: string } } | null;
     files: any;
 }
 
@@ -93,28 +90,6 @@ export function Preview({ files }: PreviewFrameProps) {
                     )}
                 </div>
             </div>
-            {/* <SandpackProvider
-                files={files}
-                template="react-ts"
-                options={{
-                    externalResources: [
-                        "https://unpkg.com/@tailwindcss/ui/dist/tailwind-ui.min.css",
-                    ]
-                }}
-                className="min-h-full"
-                theme={theme == 'dark' ? "dark" : undefined}
-            >
-                <SandpackLayout className="h-full">
-                    <SandpackPreview
-                        showOpenNewtab={true}
-                        showNavigator={true}
-                        showRefreshButton={true}
-                        showRestartButton={true}
-                        showOpenInCodeSandbox={false}
-                        showSandpackErrorOverlay={true}
-                        className='h-[100vh]' />
-                </SandpackLayout>
-            </SandpackProvider> */}
         </div>
     );
 }
