@@ -22,6 +22,7 @@ import { v4 as uuidv4 } from 'uuid';
 import ButtonLoader from '../button-loader';
 import SandpackViewer from '../sandpack-viewer';
 import styles from './_components/Markdown.module.scss';
+import UserInput from '../user-input';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
@@ -30,7 +31,9 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
-    const [userInput, setUserInput] = useState<string>('');
+    const [userInput, setUserInput] = useState<string | null | undefined>('');
+    const [scrapeUrl, setScrapeUrl] = useState<string>('');
+    const [latestUrl, setLatestUrl] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const abortControllerRef = useRef<AbortController | null>(null);
     const router = useRouter();
@@ -39,10 +42,14 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
     const { messages, setMessages, files, setFiles, handleFileSelect } = useFileMessage();
 
     useEffect(() => {
-        setMessages(workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map((msg: any) => ({
+        const sortedMessages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt)
+        setMessages(sortedMessages.map((msg: any) => ({
             role: msg.role,
             content: msg.content
         })) ?? []);
+        if (sortedMessages.length > 0 && sortedMessages[sortedMessages.length - 1].url && sortedMessages[sortedMessages.length - 1].url != "") {
+            setLatestUrl(sortedMessages[sortedMessages.length - 1].url);
+        }
         setIsChangesPushed(workspace.isChangesPushed)
         setFiles(workspace.fileData);
         setTitle(workspace.title);
@@ -136,16 +143,36 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
     const onGenerate = async (content: string) => {
         setUserInput('');
         setLoading(true);
-        await onMessagesUpdate(null, 'user', content, workspace.id);
+        setLatestUrl(scrapeUrl);
+        await onMessagesUpdate(null, 'user', content, workspace.id, scrapeUrl);
         setMessages((prev: Message[]) => [...prev, {
             role: 'user',
             content: content
         }]);
+        setScrapeUrl("");
         setLoading(false);
     }
 
     const init = async () => {
         setLoading(true);
+        let msg = "";
+
+        if (latestUrl != "") {
+            setAction("Scraping the Url");
+            const scrapedResponse = await fetch('/api/scrape?url=' + latestUrl, {
+                method: 'GET'
+            });
+            const scrapedData = await scrapedResponse.json();
+            if (scrapedData.error) {
+                msg += 'Couldn\'t scrape the provided url.\n';
+            }
+            else {
+                setAction("Storing scraped Data");
+                console.log(scrapedData);
+                msg += 'Url scraped successfully.\n';
+            }
+            setAction("");
+        }
 
         const response = await fetch("/api/chat", {
             method: "POST",
@@ -167,7 +194,6 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let msg = "";
         let buffer = "";
         const messageId = uuidv4();
         while (true) {
@@ -185,7 +211,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
             } else {
                 msg += cleanedText.trim();
             }
-            onMessagesUpdate(messageId, 'assistant', msg, workspace.id);
+            onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
             newMessages.pop();
             newMessages.push({ role: 'assistant', content: msg });
             setMessages(newMessages);
@@ -222,6 +248,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                                             remarkPlugins={remarkPlugins(false)}
                                             rehypePlugins={rehypePlugins(true)}
                                         >{message.content}</ReactMarkdown>
+                                        {message.url && message.url != "" && <p className="text-sm">{message.url}</p>}
                                     </div>
                                 </div>))}
                             {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2'>
@@ -241,29 +268,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <div className='p-5 border relative min-h-[6rem] rounded-xl max-w-2xl w-full mt-3 bg-secondary'>
-                            <GlowingEffect
-                                spread={40}
-                                glow={true}
-                                disabled={false}
-                                proximity={64}
-                                inactiveZone={0.01}
-                            />
-                            <div className='flex gap-2'>
-                                <textarea
-                                    onKeyDown={(e) => {
-                                        if (e.key == 'Enter' && userInput != null && userInput != "") onGenerate(userInput);
-                                    }}
-                                    placeholder={Lookup.INPUT_PLACEHOLDER}
-                                    onChange={(e) => setUserInput(e.target.value)}
-                                    value={userInput}
-                                    className='outline-none border-none bg-transparent w-full !h-24 !max-h-56 resize-none' />
-                                {!loading && userInput && <ArrowRight
-                                    onClick={() => onGenerate(userInput)}
-                                    className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
-                                {loading && <ButtonLoader onClick={handleAbort} />}
-                            </div>
-                        </div>
+                        <UserInput onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
                     </div>
                 </ResizablePanel>
                 <ResizableHandle />

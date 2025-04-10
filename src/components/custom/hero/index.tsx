@@ -8,9 +8,11 @@ import { ArrowRight, Link } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ButtonLoader from '../button-loader';
+import UserInput from '../user-input';
 
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
+    const [scrapeUrl, setScrapeUrl] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
     const onGenerate = async (input: string) => {
@@ -22,7 +24,7 @@ const Hero = ({ user }: { user: any }) => {
         setLoading(true);
         const messages = { role: "user", content: input }
         if (messages) {
-            const workspace = await createWorkspace(messages, user);
+            const workspace = await createWorkspace(messages, user, scrapeUrl);
             if (workspace)
                 router.replace(`/workspace/${workspace.id}`);
         }
@@ -33,32 +35,7 @@ const Hero = ({ user }: { user: any }) => {
             <Spotlight />
             <h2 className='font-bold text-4xl'>{Lookup.HERO_HEADING}</h2>
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
-            <div className='p-5 border min-h-[6rem] rounded-xl max-w-2xl w-full mt-3 bg-secondary relative'>
-                <GlowingEffect
-                    spread={40}
-                    glow={true}
-                    disabled={false}
-                    proximity={64}
-                    inactiveZone={0.01}
-                />
-                <div className='flex gap-2'>
-                    <textarea
-                        onKeyDown={(e) => {
-                            if (e.key == 'Enter' && userInput != null && userInput != "") onGenerate(userInput);
-                        }}
-                        placeholder={Lookup.INPUT_PLACEHOLDER}
-                        value={userInput || ""}
-                        onChange={(event) => setUserInput(event.target.value)}
-                        className='outline-none border-none bg-transparent w-full !h-32 !max-h-56 resize-none' />
-                    {!loading && userInput && <ArrowRight
-                        onClick={() => onGenerate(userInput)}
-                        className='w-10 h-10 p-2 rounded-md text-secondary-foreground bg-gradient-to-tr from-teal-500 via-cyan-500 to-sky-500 cursor-pointer' />}
-                    {loading && <ButtonLoader />}
-                </div>
-                <div>
-                    <Link className='h-5 w-5' />
-                </div>
-            </div>
+            <UserInput onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
             <div className='flex mt-8 flex-wrap max-w2xl items-center justify-center gap-3 text-muted-foreground'>
                 {Lookup?.SUGGSTIONS.map((suggestion, index) => (
                     <button

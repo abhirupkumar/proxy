@@ -8,6 +8,7 @@ import { SidebarProvider } from '@/components/ui/sidebar'
 import Header from '@/components/custom/header'
 import AppSidebar from '@/components/custom/app-sidebar'
 import dynamic from 'next/dynamic'
+import { TooltipProvider } from '@/components/ui/tooltip'
 const NextThemesProvider = dynamic(
     () => import('next-themes').then((e) => e.ThemeProvider),
     {
@@ -24,13 +25,15 @@ export function Provider({
         <NextThemesProvider //dark mode
             {...props}
         >
-            <FileMessageProvider>
-                <Header />
-                <SidebarProvider defaultOpen={false}>
-                    <AppSidebar />
-                    {children}
-                </SidebarProvider>
-            </FileMessageProvider>
+            <TooltipProvider>
+                <FileMessageProvider>
+                    <Header />
+                    <SidebarProvider defaultOpen={false}>
+                        <AppSidebar />
+                        {children}
+                    </SidebarProvider>
+                </FileMessageProvider>
+            </TooltipProvider>
         </NextThemesProvider>
     </ClerkProvider>
 }
