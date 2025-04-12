@@ -23,6 +23,7 @@ import ButtonLoader from '../button-loader';
 import SandpackViewer from '../sandpack-viewer';
 import styles from './_components/Markdown.module.scss';
 import UserInput from '../user-input';
+import { scrapeFromUrl } from '@/lib/actions';
 
 const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
@@ -40,12 +41,22 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
     const { resolvedTheme } = useTheme();
 
     const { messages, setMessages, files, setFiles, handleFileSelect } = useFileMessage();
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+    // Scroll to bottom whenever messages, newAiMessage, or loading state changes
+    useEffect(() => {
+        if (scrollContainerRef.current) {
+            const scrollContainer = scrollContainerRef.current;
+            scrollContainer.scrollTop = scrollContainer.scrollHeight;
+        }
+    }, [messages]);
 
     useEffect(() => {
         const sortedMessages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt)
         setMessages(sortedMessages.map((msg: any) => ({
             role: msg.role,
-            content: msg.content
+            content: msg.content,
+            url: msg.url,
         })) ?? []);
         if (sortedMessages.length > 0 && sortedMessages[sortedMessages.length - 1].url && sortedMessages[sortedMessages.length - 1].url != "") {
             setLatestUrl(sortedMessages[sortedMessages.length - 1].url);
@@ -159,20 +170,22 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
 
         if (latestUrl != "") {
             setAction("Scraping the Url");
-            const scrapedResponse = await fetch('/api/scrape?url=' + latestUrl, {
-                method: 'GET'
-            });
-            const scrapedData = await scrapedResponse.json();
+            const scrapedData = await scrapeFromUrl(latestUrl, messages[messages.length - 1].content, workspace.id);
             if (scrapedData.error) {
                 msg += 'Couldn\'t scrape the provided url.\n';
             }
             else {
-                setAction("Storing scraped Data");
-                console.log(scrapedData);
-                msg += 'Url scraped successfully.\n';
+                setAction("Data scraped successfully");
+                msg += `Url (${latestUrl}) scraped successfully.\n`;
             }
+            setLatestUrl("");
             setAction("");
         }
+
+        let newMessages = messages;
+        newMessages.push({ role: 'assistant', content: msg });
+
+        setMessages(newMessages);
 
         const response = await fetch("/api/chat", {
             method: "POST",
@@ -183,9 +196,6 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
             // signal: controller.signal
         });
         messageParser.reset();
-
-        let newMessages = messages;
-        newMessages.push({ role: 'assistant', content: "" });
 
         if (!response.body) {
             console.error("No response body received.");
@@ -237,18 +247,20 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                         <Link href="/" className='mr-auto ml-3 mb-2'>
                             {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} />}
                         </Link>
-                        <div className='flex-1 overflow-y-scroll no-scrollbar max-w-[600px]'>
+                        <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[1000px]'>
                             {messages.length > 0 && messages?.map((message: any, index: number) => (
-                                <div key={index} className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
-                                    {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
-                                    <div className="whitespace-pre-wrap">
-                                        <ReactMarkdown
-                                            allowedElements={allowedHTMLElements}
-                                            className={styles.MarkdownContent}
-                                            remarkPlugins={remarkPlugins(false)}
-                                            rehypePlugins={rehypePlugins(true)}
-                                        >{message.content}</ReactMarkdown>
-                                        {message.url && message.url != "" && <p className="text-sm">{message.url}</p>}
+                                <div key={index} className='w-full flex flex-col'>
+                                    {message.url && message.url != "" && <Link href={message.url} target="_blank" rel='noopener noreferrer' className="text-sm text-right text-blue-400">@{message.url}</Link>}
+                                    <div className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
+                                        {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
+                                        <div className="whitespace-pre-wrap">
+                                            <ReactMarkdown
+                                                allowedElements={allowedHTMLElements}
+                                                className={styles.MarkdownContent}
+                                                remarkPlugins={remarkPlugins(false)}
+                                                rehypePlugins={rehypePlugins(true)}
+                                            >{message.content}</ReactMarkdown>
+                                        </div>
                                     </div>
                                 </div>))}
                             {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2'>

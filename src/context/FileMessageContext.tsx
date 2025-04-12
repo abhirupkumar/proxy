@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export interface Message {
     role: 'user' | "assistant",
-    content: string
+    content: string,
+    url?: string | null | undefined,
 }
 
 export interface FileSystem {

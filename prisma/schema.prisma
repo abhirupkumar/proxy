@@ -37,13 +37,14 @@ model Workspace {
 }
 
 model Message {
-  id          String    @id @default(uuid())
-  role        String
-  content     String
-  url         String?
-  createdAt   DateTime  @default(now())
-  workspaceId String    @db.Uuid
-  Workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  id             String    @id @default(uuid())
+  role           String
+  content        String
+  url            String?
+  urlScrapedData Json?
+  createdAt      DateTime  @default(now())
+  workspaceId    String    @db.Uuid
+  Workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
 }
 
 model GitHubRepo {

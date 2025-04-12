@@ -18,9 +18,9 @@ export async function POST(req: NextRequest) {
         const { workspaceId } = await req.json();
         const workspace = await getWorkspace(workspaceId);
         if (!workspace) return NextResponse.json({ error: "Workspace cannot be found." }, { status: 402 });
-        const messages = workspace.Messages.map(msg => ({
+        const messages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map(msg => ({
             role: msg.role,
-            parts: [{ text: msg.content }]
+            parts: [{ text: msg.content + (msg.urlScrapedData ? `\nUrl Scraped Data: ${JSON.stringify(msg.urlScrapedData)}` : "") }]
         })) ?? [];
         const files = workspace.fileData;
         const extraFiles = Object.entries(files!).map(([filepath, { code }]) => `  -  ${filepath}`);
