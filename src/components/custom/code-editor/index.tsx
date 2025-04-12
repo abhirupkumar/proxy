@@ -107,13 +107,13 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
 
     return (
         <ScrollArea className="h-full flex-1">
-            <div className="h-full pt-4">
+            <div className="h-full">
                 <div className="flex overflow-x-auto">
                     {selectedFiles.map((filepath, index) => (
                         <div
                             key={index}
                             className={clsx(
-                                "flex items-center p-2 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
+                                "flex items-center px-2 py-1 rounded-t-md border-b border-gray-700 text-muted-foreground shadow-md"
                             )}
                         >
                             <button className="flex" onClick={() => setSelectedFile(filepath)}>
@@ -123,7 +123,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
                                         height={14}
                                         width={14}
                                         alt="ts-file"
-                                        className="mr-2"
+                                        className="mr-1"
                                     />
                                 ) : (
                                     <FileText className="h-4 w-4 mr-2 text-blue-400" />
@@ -131,7 +131,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
                                 <span className="text-sm font-semibold hover:text-primary">{filepath}</span>
                             </button>
                             <button onClick={() => removeFilePath(filepath)}>
-                                <X className="h-3 w-3 mt-1 ml-1 hover:text-primary" />
+                                <X className="h-3 w-3 ml-1 hover:text-primary" />
                             </button>
                         </div>
                     ))}

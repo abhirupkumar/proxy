@@ -61,6 +61,7 @@ export const getWorkspace = async (id: string) => {
             include: {
                 Messages: true,
                 githubRepo: true,
+                User: true
             },
         });
         return workspace;
@@ -69,18 +70,6 @@ export const getWorkspace = async (id: string) => {
         console.log(error)
         return null;
     }
-}
-
-export const onCurrentUser = async () => {
-    const user = await currentUser();
-    if (user == null) return null;
-    const userData = await db.user.findUnique({
-        where: {
-            clerkId: user.id
-        }
-    })
-
-    return userData
 }
 
 export const getAllWorkspaces = async (userId: string) => {
@@ -213,6 +202,24 @@ export async function onIdAndTitleUpdate(id: string, title: string, artifactId: 
             artifactId: artifactId
         }
     })
+}
+
+export const changePrivateWorkspace = async (id: string, isPrivate: boolean) => {
+    try {
+        const workspace = await db.workspace.update({
+            where: {
+                id: id,
+            },
+            data: {
+                isPrivate: isPrivate,
+            },
+        });
+        return workspace;
+    }
+    catch (error: any) {
+        console.log(error)
+        return null;
+    }
 }
 
 export const getClerkClient = async () => {

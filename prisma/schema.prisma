@@ -34,6 +34,7 @@ model Workspace {
   User            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   githubRepo      GitHubRepo?
   isChangesPushed Boolean     @default(true)
+  isPrivate       Boolean     @default(true)
 }
 
 model Message {

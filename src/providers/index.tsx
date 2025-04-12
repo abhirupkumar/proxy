@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { FileMessageProvider } from '@/context/FileMessageContext'
+import { WorkspaceDataProvider } from '@/context/WorkspaceDataContext'
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
 import { SidebarProvider } from '@/components/ui/sidebar'
@@ -26,13 +26,13 @@ export function Provider({
             {...props}
         >
             <TooltipProvider>
-                <FileMessageProvider>
+                <WorkspaceDataProvider>
                     <Header />
                     <SidebarProvider defaultOpen={false}>
                         <AppSidebar />
                         {children}
                     </SidebarProvider>
-                </FileMessageProvider>
+                </WorkspaceDataProvider>
             </TooltipProvider>
         </NextThemesProvider>
     </ClerkProvider>

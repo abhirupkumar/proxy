@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import DeleteButton from '../delete-button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 const WorkspaceHistory = () => {
     const { isLoaded, isSignedIn, user } = useUser();
@@ -27,8 +28,8 @@ const WorkspaceHistory = () => {
 
     const truncate = (str: string | undefined | null) => {
         if (!str) return "New Chat";
-        if (str.length > 23) {
-            return str.substr(0, 23) + '...';
+        if (str.length > 20) {
+            return str.substr(0, 20) + '...';
         }
         return str;
     }
@@ -44,9 +45,16 @@ const WorkspaceHistory = () => {
                 return (
                     <SidebarMenuItem key={index}>
                         <SidebarMenuButton className='flex'>
-                            <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className='flex-1'>
-                                {truncate(workspace.title ?? workspace.Messages[0].content)}
-                            </Link>
+                            <Tooltip delayDuration={1000}>
+                                <TooltipTrigger>
+                                    <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className='flex-1'>
+                                        {truncate(workspace.title ?? workspace.Messages[0].content)}
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    {workspace.title ?? workspace.Messages[0].content}
+                                </TooltipContent>
+                            </Tooltip>
                             <DeleteButton onClick={() => handleDelete(workspace.id)} />
                         </SidebarMenuButton>
                     </SidebarMenuItem>

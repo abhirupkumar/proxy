@@ -5,7 +5,7 @@ import { GlowingEffect } from '@/components/ui/glowing-effect';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Message, useFileMessage } from '@/context/FileMessageContext';
+import { Message, useWorkspaceData } from '@/context/WorkspaceDataContext';
 import Lookup from '@/data/Lookup';
 import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { StreamingMessageParser } from '@/lib/stream-parser';
@@ -24,8 +24,11 @@ import SandpackViewer from '../sandpack-viewer';
 import styles from './_components/Markdown.module.scss';
 import UserInput from '../user-input';
 import { scrapeFromUrl } from '@/lib/actions';
+import PrivateButton from '../private-button';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspace: any, sessionId: string }) => {
+const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
     const [title, setTitle] = useState<string>("")
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
@@ -40,7 +43,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
     const router = useRouter();
     const { resolvedTheme } = useTheme();
 
-    const { messages, setMessages, files, setFiles, handleFileSelect } = useFileMessage();
+    const { messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
     // Scroll to bottom whenever messages, newAiMessage, or loading state changes
@@ -61,6 +64,7 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
         if (sortedMessages.length > 0 && sortedMessages[sortedMessages.length - 1].url && sortedMessages[sortedMessages.length - 1].url != "") {
             setLatestUrl(sortedMessages[sortedMessages.length - 1].url);
         }
+        setIsPrivate(workspace.isPrivate);
         setIsChangesPushed(workspace.isChangesPushed)
         setFiles(workspace.fileData);
         setTitle(workspace.title);
@@ -292,15 +296,37 @@ const WorkspacePage = ({ dbUser, workspace, sessionId }: { dbUser: any, workspac
                                     <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
                                     <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                 </TabsList>
-                                <div className='flex gap-x-4'>
-                                    {!loading ? <GithubConnectButton
-                                        workspaceId={workspace.id}
-                                        isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
-                                        repoUrl={workspace.githubRepo?.repoUrl ?? ""}
-                                        hasUnpushedChanges={!isChangesPushed}
-                                        workspaceTitle={title}
-                                    /> : <Skeleton className='w-6 h-6 rounded-full' />}
-                                    <button className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></button>
+                                <div className='flex'>
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <PrivateButton workspaceId={workspace.id} />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Is Private
+                                        </TooltipContent>
+                                    </Tooltip>
+                                    {!loading ? <Tooltip>
+                                        <TooltipTrigger>
+                                            <GithubConnectButton
+                                                workspaceId={workspace.id}
+                                                isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
+                                                repoUrl={workspace.githubRepo?.repoUrl ?? ""}
+                                                hasUnpushedChanges={!isChangesPushed}
+                                                workspaceTitle={title}
+                                            />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Connect to Github
+                                        </TooltipContent>
+                                    </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />}
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <Button variant="link" className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Export
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </div>
                             </div>
 

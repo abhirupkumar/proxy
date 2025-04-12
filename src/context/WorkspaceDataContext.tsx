@@ -11,7 +11,7 @@ export interface FileSystem {
 }
 
 // Define the type for the messages context
-interface FileMessageContextType {
+interface WorkspaceDataContextType {
     messages: Message[];
     setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
     files: FileSystem | null;
@@ -21,15 +21,18 @@ interface FileMessageContextType {
     selectedFiles: string[];
     setSelectedFiles: React.Dispatch<React.SetStateAction<string[]>>;
     handleFileSelect: (fullPath: string) => void
+    isPrivate: boolean;
+    setIsPrivate: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-const FileMessageContext = createContext<FileMessageContextType | undefined>(undefined);
+const WorkspaceDataContext = createContext<WorkspaceDataContextType | undefined>(undefined);
 
-export const FileMessageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const WorkspaceDataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [files, setFiles] = useState<FileSystem | null>(null);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+    const [isPrivate, setIsPrivate] = useState<boolean>(true);
 
     const handleFileSelect = (fullPath: string) => {
         setSelectedFile(fullPath);
@@ -41,17 +44,17 @@ export const FileMessageProvider: React.FC<{ children: ReactNode }> = ({ childre
     };
 
     return (
-        <FileMessageContext.Provider value={{ files, setFiles, selectedFile, setSelectedFile, selectedFiles, setSelectedFiles, handleFileSelect, messages, setMessages }}>
+        <WorkspaceDataContext.Provider value={{ files, setFiles, selectedFile, setSelectedFile, selectedFiles, setSelectedFiles, handleFileSelect, messages, setMessages, isPrivate, setIsPrivate }}>
             {children}
-        </FileMessageContext.Provider>
+        </WorkspaceDataContext.Provider>
     );
 };
 
 // Custom hook to use the MessagesContext
-export const useFileMessage = (): FileMessageContextType => {
-    const context = useContext(FileMessageContext);
+export const useWorkspaceData = (): WorkspaceDataContextType => {
+    const context = useContext(WorkspaceDataContext);
     if (context === undefined) {
-        throw new Error('useMessages must be used within a FileMessageProvider');
+        throw new Error('useMessages must be used within a WorkspaceDataProvider');
     }
     return context;
 };

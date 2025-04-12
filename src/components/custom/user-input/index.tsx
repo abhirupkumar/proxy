@@ -27,7 +27,7 @@ const UserInput = ({ onGenerate, loading, setLoading, userInput, setUserInput, s
                     placeholder={Lookup.INPUT_PLACEHOLDER}
                     value={userInput || ""}
                     onChange={(event) => setUserInput(event.target.value)}
-                    className='outline-none border-none bg-transparent w-full !min-h-24 !max-h-56 resize-none' />
+                    className='outline-none border-none bg-transparent w-full !min-h-6 !max-h-56 resize-none' />
                 {!loading && userInput && <ArrowRight
                     onClick={() => onGenerate(userInput)}
                     className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}

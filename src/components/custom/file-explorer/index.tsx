@@ -1,10 +1,11 @@
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Folder, FolderOpen, FileCode, File, FileText } from "lucide-react";
-import { Dispatch, SetStateAction, useState } from "react";
+import { Folder, FolderOpen, FileCode, File, FileText, Search } from "lucide-react";
+import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import clsx from "clsx";
 import Image from "next/image";
+import { Input } from "@/components/ui/input";
 
 interface FileExplorerProps {
     selectedFile: string | null;
@@ -23,26 +24,30 @@ interface FileSystem {
 }
 
 export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, setSelectedFiles, fileSystem }: FileExplorerProps) {
+    const [searchTerm, setSearchTerm] = useState<string>("");
     const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
         new Set(["src"])
     );
 
-    const createFileTree = () => {
+    const createFileTree = (searchFilter: string = "") => {
         const tree: Record<string, any> = {};
 
         Object.keys(fileSystem).forEach((path) => {
+            if (searchFilter && !path.toLowerCase().includes(searchFilter.toLowerCase())) {
+                return;
+            }
+
             const parts = path.split("/");
             let current = tree;
 
             parts.forEach((part, index) => {
                 if (index === parts.length - 1) {
-                    // File
                     current[part] = {
                         type: "file",
                         content: fileSystem[path].code,
+                        path: path,
                     };
                 } else {
-                    // Directory
                     current[part] = current[part] || {
                         type: "directory",
                         children: {},
@@ -99,7 +104,6 @@ export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, set
     };
 
     const renderFileSystem = (structure: any, path = "", depth = 0) => {
-        // Sort folders first, then files (both alphabetically)
         const sortedEntries = Object.entries(structure).sort(([nameA, itemA]: [string, any], [nameB, itemB]: [string, any]) => {
             if (itemA.type === "directory" && itemB.type !== "directory") return -1;
             if (itemA.type !== "directory" && itemB.type === "directory") return 1;
@@ -109,7 +113,7 @@ export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, set
         return sortedEntries.map(([name, item]: [string, any]) => {
             const fullPath = path ? `${path}/${name}` : name;
             const isExpanded = expandedFolders.has(fullPath);
-            const isSelected = selectedFile === fullPath;
+            const isSelected = selectedFile === item.path;
 
             if (item.type === "directory") {
                 return (
@@ -140,30 +144,30 @@ export function FileExplorer({ selectedFile, selectedFiles, setSelectedFile, set
 
             return (
                 <button
-                    key={fullPath}
+                    key={item.path}
                     className={clsx(
                         "flex items-center w-full px-2 py-1 rounded-sm text-sm hover:bg-secondary text-muted-foreground transition",
                         isSelected && "bg-secondary text-primary"
                     )}
-                    onClick={() => handleFileSelect(fullPath)}
+                    onClick={() => handleFileSelect(item.path)}
                     style={{ paddingLeft: `${depth}px` }}
                 >
-                    {getFileLanguage(fullPath) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(fullPath)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
+                    {getFileLanguage(item.path) != 'txt' ? <Image src={`/file-icons/${getFileLanguage(item.path)}.svg`} height={14} width={14} alt="ts-file" className="mr-2" /> : <FileText className="h-4 w-4 mr-2 text-blue-400" />}
                     {name}
                 </button>
             );
         });
     };
 
-    const fileTree = createFileTree();
-
+    const fileTree = useMemo(() => createFileTree(searchTerm), [fileSystem, searchTerm]);
     return (
         <ScrollArea className="border-r h-[100vh] min-w-48 text-secondary-foreground">
-            <div className="p-4 border-b border-gray-700">
-                <h2 className="font-semibold text-secondary-foreground/80">Explorer</h2>
+            <div className="flex gap-x-2 items-center p-1">
+                <Search className="h-3 w-3 absolute ml-1" />
+                <Input className="rounded-full text-sm border-none pl-5 py-0 h-auto" placeholder="Search" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
             </div>
             <div>
-                <div className="p-2">{renderFileSystem(fileTree)}</div>
+                <div className="px-2">{renderFileSystem(fileTree)}</div>
             </div>
         </ScrollArea>
     );

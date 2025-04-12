@@ -1,7 +1,7 @@
 "use client";
 
 import { TabsContent } from '@/components/ui/tabs';
-import { FileSystem, useFileMessage } from '@/context/FileMessageContext';
+import { FileSystem, useWorkspaceData } from '@/context/WorkspaceDataContext';
 import { SandpackProvider } from '@codesandbox/sandpack-react';
 import { useTheme } from 'next-themes';
 import { CodeEditor } from '../code-editor';
@@ -10,7 +10,7 @@ import { Preview } from '../preview';
 
 const SandpackViewer = ({ files }: { files: FileSystem }) => {
     const { resolvedTheme } = useTheme();
-    const { selectedFile, setSelectedFile, selectedFiles, setSelectedFiles } = useFileMessage();
+    const { selectedFile, setSelectedFile, selectedFiles, setSelectedFiles } = useWorkspaceData();
     return (
         <SandpackProvider
             theme={resolvedTheme == 'dark' ? "dark" : undefined}
