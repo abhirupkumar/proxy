@@ -2,11 +2,9 @@ import type { Metadata } from "next";
 import { DM_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers";
+import { constructMetadata } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Proxy",
-  description: "One stop solution for building full stack web apps",
-};
+export const metadata: Metadata = constructMetadata()
 
 const font = DM_Sans({
   weight: "400",

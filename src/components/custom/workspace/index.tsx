@@ -28,6 +28,7 @@ import PrivateButton from '../private-button';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@clerk/nextjs';
+import { useToast } from '@/hooks/use-toast';
 
 const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
@@ -48,6 +49,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
 
     const { messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const { toast } = useToast()
 
     useEffect(() => {
         if (scrollContainerRef.current) {
@@ -239,9 +241,14 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
 
     const handleFork = async () => {
         setIconLoading(true);
-        const fork = await forkWorkspace(workspace.id, userId!);
+        const fork = await forkWorkspace(workspace.id);
         if (fork)
-            router.push(process.env.NEXT_PUBLIC_APP_URL! + '/workspace' + fork.id);
+            router.push(process.env.NEXT_PUBLIC_APP_URL! + '/workspace/' + fork.id);
+        else toast({
+            variant: "destructive",
+            title: "Uh oh! Something went wrong.",
+            description: "There was a problem with your request.",
+        })
         setIconLoading(false);
     }
 
@@ -249,6 +256,13 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         abortControllerRef.current?.abort();
         setLoading(false);
     };
+
+    const truncate = (str: string) => {
+        if (str.length > 30) {
+            return str.substring(0, 30) + "...";
+        }
+        return str;
+    }
 
     return (
         <div className='w-full text-sm' suppressHydrationWarning>
@@ -259,9 +273,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                 <ResizablePanel defaultSize={37} minSize={25}>
                     <div className='relative h-[100vh] flex flex-col p-3 items-center'>
                         <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
-                            <Link href="/">
-                                {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} />}
-                            </Link>
+                            <h2>{title != "" ? title : "New Chat"}</h2>
                             <span className='flex' suppressHydrationWarning>
                                 <Tooltip delayDuration={1000}>
                                     <TooltipTrigger>
@@ -285,6 +297,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                             {messages.length > 0 && messages?.map((message: any, index: number) => (
                                 <div key={index} className='w-full flex flex-col'>
                                     {message.url && message.url != "" && <Link href={message.url} target="_blank" rel='noopener noreferrer' className="text-sm text-right text-blue-400">@{message.url}</Link>}
+                                    {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
                                     <div className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
                                         {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="whitespace-pre-wrap">
@@ -317,7 +330,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                         <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
                     </div>
                 </ResizablePanel>
-                {isLoaded && isSignedIn && userId == dbUser.clerkId && <>
+                {isLoaded && isSignedIn && <>
                     <ResizableHandle />
                     <ResizablePanel defaultSize={63} minSize={25}>
                         <div className='flex flex-col h-full w-auto'>
@@ -328,15 +341,15 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                         <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                     </TabsList>
                                     <div className='flex' suppressHydrationWarning>
-                                        <Tooltip>
+                                        {userId == dbUser.clerkId && <Tooltip delayDuration={1000}>
                                             <TooltipTrigger>
                                                 <PrivateButton workspaceId={workspace.id} />
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                Is Private
+                                                {workspace.isPrivate ? "Private" : "Public"}
                                             </TooltipContent>
-                                        </Tooltip>
-                                        {!loading ? <Tooltip>
+                                        </Tooltip>}
+                                        {userId == dbUser.clerkId && (!loading ? <Tooltip delayDuration={1000}>
                                             <TooltipTrigger>
                                                 <GithubConnectButton
                                                     workspaceId={workspace.id}
@@ -349,8 +362,8 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                             <TooltipContent>
                                                 Connect to Github
                                             </TooltipContent>
-                                        </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />}
-                                        <Tooltip>
+                                        </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />)}
+                                        <Tooltip delayDuration={1000}>
                                             <TooltipTrigger>
                                                 <Button variant="link" size='icon' className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></Button>
                                             </TooltipTrigger>

@@ -9,6 +9,7 @@ import Header from '@/components/custom/header'
 import AppSidebar from '@/components/custom/app-sidebar'
 import dynamic from 'next/dynamic'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { Toaster } from '@/components/ui/toaster'
 const NextThemesProvider = dynamic(
     () => import('next-themes').then((e) => e.ThemeProvider),
     {
@@ -25,6 +26,7 @@ export function Provider({
         <NextThemesProvider //dark mode
             {...props}
         >
+            <Toaster />
             <TooltipProvider>
                 <WorkspaceDataProvider>
                     <Header />

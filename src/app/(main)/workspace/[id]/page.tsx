@@ -1,7 +1,27 @@
 import WorkspacePage from '@/components/custom/workspace';
 import { getWorkspace } from '@/lib/queries';
+import { constructMetadata } from '@/lib/utils';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
+
+type Props = {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata(
+    { params, searchParams }: Props,
+    parent: ResolvingMetadata
+): Promise<Metadata> {
+    const { id } = await params
+
+    const workspace = await getWorkspace(id);
+
+    return {
+        title: (workspace?.title ?? "") + " - Proxy",
+    }
+}
 
 const Workspace = async ({ params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;

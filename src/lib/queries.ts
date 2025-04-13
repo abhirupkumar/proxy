@@ -3,6 +3,8 @@
 import { ReactBasePrompt } from "@/data/BasePrompts";
 import { db } from "@/lib/db";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
+import { Prisma } from "@prisma/client/edge";
+import { v4 as uuid4 } from "uuid";
 
 export const getUser = async () => {
     try {
@@ -133,8 +135,10 @@ export const deleteWorkspace = async (id: any) => {
     }
 }
 
-export const forkWorkspace = async (workspaceId: string, userId: string) => {
+export const forkWorkspace = async (workspaceId: string) => {
     try {
+        const user = await currentUser();
+        if (!user) return null;
         const workspace = await db.workspace.findUnique({
             where: {
                 id: workspaceId,
@@ -143,31 +147,41 @@ export const forkWorkspace = async (workspaceId: string, userId: string) => {
                 Messages: true
             }
         });
-        if (!workspace) return null;
+        const dbUser = await db.user.findUnique({
+            where: {
+                clerkId: user.id!,
+            },
+        });
+
+        if (!workspace || !dbUser) {
+            return null;
+        }
+
         const newWorkspace = await db.workspace.create({
             data: {
-                userId: userId,
-                title: workspace.title,
-                artifactId: workspace.artifactId,
-                fileData: workspace.fileData as any,
+                userId: dbUser.id,
+                title: workspace.title + " (fork)",
+                artifactId: workspace.artifactId + "-fork",
+                fileData: workspace.fileData!,
                 isChangesPushed: false,
                 isPrivate: true,
                 Messages: {
                     createMany: {
-                        data: workspace.Messages.map((message) => ({
+                        data: [...workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map((message) => ({
                             role: message.role,
                             content: message.content,
-                            url: message?.url ?? "",
-                            urlScrapedData: message.urlScrapedData ?? undefined,
-                        }))
+                            url: message.url ?? null,
+                            urlScrapedData: message.urlScrapedData === null ? Prisma.JsonNull : message.urlScrapedData,
+                        }))],
+                        skipDuplicates: true
                     }
                 }
             }
-        })
+        });
         return newWorkspace;
     }
     catch (error: any) {
-        console.log(error)
+        console.log(error.message)
         return null;
     }
 }

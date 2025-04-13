@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { PluggableList, Plugin } from "unified";
 import { SKIP, visit } from "unist-util-visit";
 import rehypeSanitize, { defaultSchema, type Options as RehypeSanitizeOptions } from 'rehype-sanitize';
+import { Metadata } from "next";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -142,4 +143,45 @@ function _stripIndents(value: string) {
     .join('\n')
     .trimStart()
     .replace(/[\r\n]$/, '');
+}
+
+export function constructMetadata({
+  title = "Proxy",
+  description = "Proxy - One stop solution for all your full stack apps",
+  image = "/logo-white.svg",
+}: {
+  title?: string;
+  description?: string;
+  image?: string;
+  noIndex?: boolean;
+} = {}): Metadata {
+  return {
+    title,
+    description,
+    icons: {
+      icon: [
+        {
+          url: image,
+          href: image,
+        },
+      ],
+    },
+    openGraph: {
+      title,
+      description,
+      images: [
+        {
+          url: image,
+          href: image,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [image],
+    },
+    metadataBase: new URL("https://proxyai.tech"),
+  };
 }
