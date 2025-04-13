@@ -133,6 +133,45 @@ export const deleteWorkspace = async (id: any) => {
     }
 }
 
+export const forkWorkspace = async (workspaceId: string, userId: string) => {
+    try {
+        const workspace = await db.workspace.findUnique({
+            where: {
+                id: workspaceId,
+            },
+            include: {
+                Messages: true
+            }
+        });
+        if (!workspace) return null;
+        const newWorkspace = await db.workspace.create({
+            data: {
+                userId: userId,
+                title: workspace.title,
+                artifactId: workspace.artifactId,
+                fileData: workspace.fileData as any,
+                isChangesPushed: false,
+                isPrivate: true,
+                Messages: {
+                    createMany: {
+                        data: workspace.Messages.map((message) => ({
+                            role: message.role,
+                            content: message.content,
+                            url: message?.url ?? "",
+                            urlScrapedData: message.urlScrapedData ?? undefined,
+                        }))
+                    }
+                }
+            }
+        })
+        return newWorkspace;
+    }
+    catch (error: any) {
+        console.log(error)
+        return null;
+    }
+}
+
 export async function onFilesUpdate(id: string, files: any) {
     await db.workspace.update({
         where: {

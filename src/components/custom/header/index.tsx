@@ -7,21 +7,21 @@ import { usePathname } from 'next/navigation';
 import React from 'react';
 
 const Header = () => {
-    const { theme } = useTheme();
+    const { resolvedTheme } = useTheme();
     const pathname = usePathname();
     if (pathname != '/') return <></>;
     return (
         <div className='p-4 flex justify-between items-center'>
             <Link href="/">
-                {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
-                    <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} />}
+                {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
+                    <Image src="/logo-white.svg" alt="Logo" width={100} height={100} />}
             </Link>
             <div className='flex gap-3'>
                 <SignedIn>
                     <UserButton />
                 </SignedIn>
                 <SignedOut>
-                    <SignInButton>
+                    <SignInButton forceRedirectUrl={window.location.href}>
                         <Button>
                             Sign In
                         </Button>

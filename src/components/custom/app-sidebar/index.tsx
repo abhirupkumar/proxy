@@ -17,7 +17,7 @@ const AppSidebar = () => {
             <SidebarHeader className='p-5'>
                 <Link href="/">
                     {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
-                        <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} />}
+                        <Image src="/logo-white.svg" alt="Logo" width={100} height={100} />}
                 </Link>
             </SidebarHeader>
             <SidebarContent className='p-5'>

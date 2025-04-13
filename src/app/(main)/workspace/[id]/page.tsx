@@ -14,8 +14,6 @@ const Workspace = async ({ params }: { params: Promise<{ id: string }> }) => {
         if (!user) return notFound();
         else if (user.id !== workspace.User.clerkId) return notFound();
     }
-    else {
-    }
 
     return (
         <>

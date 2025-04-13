@@ -7,11 +7,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Message, useWorkspaceData } from '@/context/WorkspaceDataContext';
 import Lookup from '@/data/Lookup';
-import { onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
+import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import JSZip from 'jszip';
-import { ArrowRight, Download, Loader2 } from 'lucide-react';
+import { ArrowRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -25,10 +25,12 @@ import styles from './_components/Markdown.module.scss';
 import UserInput from '../user-input';
 import { scrapeFromUrl } from '@/lib/actions';
 import PrivateButton from '../private-button';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useAuth } from '@clerk/nextjs';
 
 const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
+    const { userId, isLoaded, isSignedIn } = useAuth();
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
     const [title, setTitle] = useState<string>("")
     const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
@@ -42,11 +44,11 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const abortControllerRef = useRef<AbortController | null>(null);
     const router = useRouter();
     const { resolvedTheme } = useTheme();
+    const [iconLoading, setIconLoading] = useState(false);
 
     const { messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
 
-    // Scroll to bottom whenever messages, newAiMessage, or loading state changes
     useEffect(() => {
         if (scrollContainerRef.current) {
             const scrollContainer = scrollContainerRef.current;
@@ -235,6 +237,14 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         setLoading(false);
     }
 
+    const handleFork = async () => {
+        setIconLoading(true);
+        const fork = await forkWorkspace(workspace.id, userId!);
+        if (fork)
+            router.push(process.env.NEXT_PUBLIC_APP_URL! + '/workspace' + fork.id);
+        setIconLoading(false);
+    }
+
     const handleAbort = () => {
         abortControllerRef.current?.abort();
         setLoading(false);
@@ -248,10 +258,30 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             >
                 <ResizablePanel defaultSize={37} minSize={25}>
                     <div className='relative h-[100vh] flex flex-col p-3 items-center'>
-                        <Link href="/" className='mr-auto ml-3 mb-2'>
-                            {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} />}
-                        </Link>
-                        <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[1000px]'>
+                        <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
+                            <Link href="/">
+                                {resolvedTheme == 'dark' ? <Image src="/logo-dark.svg" alt="logo" height={100} width={100} /> : <Image src="/logo-white.svg" alt="logo" height={100} width={100} />}
+                            </Link>
+                            <span className='flex' suppressHydrationWarning>
+                                <Tooltip delayDuration={1000}>
+                                    <TooltipTrigger>
+                                        <Link href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        New Chat
+                                    </TooltipContent>
+                                </Tooltip>
+                                <Tooltip delayDuration={1000}>
+                                    <TooltipTrigger>
+                                        {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Fork
+                                    </TooltipContent>
+                                </Tooltip>
+                            </span>
+                        </div>
+                        <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[720px]'>
                             {messages.length > 0 && messages?.map((message: any, index: number) => (
                                 <div key={index} className='w-full flex flex-col'>
                                     {message.url && message.url != "" && <Link href={message.url} target="_blank" rel='noopener noreferrer' className="text-sm text-right text-blue-400">@{message.url}</Link>}
@@ -284,56 +314,58 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <UserInput onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
+                        <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
                     </div>
                 </ResizablePanel>
-                <ResizableHandle />
-                <ResizablePanel defaultSize={63} minSize={25}>
-                    <div className='flex flex-col h-full w-auto'>
-                        <Tabs defaultValue="code" className="h-full flex flex-col">
-                            <div className="flex border-b items-center justify-between">
-                                <TabsList className="my-2 mx-4 rounded-full">
-                                    <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
-                                    <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
-                                </TabsList>
-                                <div className='flex'>
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            <PrivateButton workspaceId={workspace.id} />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Is Private
-                                        </TooltipContent>
-                                    </Tooltip>
-                                    {!loading ? <Tooltip>
-                                        <TooltipTrigger>
-                                            <GithubConnectButton
-                                                workspaceId={workspace.id}
-                                                isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
-                                                repoUrl={workspace.githubRepo?.repoUrl ?? ""}
-                                                hasUnpushedChanges={!isChangesPushed}
-                                                workspaceTitle={title}
-                                            />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Connect to Github
-                                        </TooltipContent>
-                                    </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />}
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            <Button variant="link" className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Export
-                                        </TooltipContent>
-                                    </Tooltip>
+                {isLoaded && isSignedIn && userId == dbUser.clerkId && <>
+                    <ResizableHandle />
+                    <ResizablePanel defaultSize={63} minSize={25}>
+                        <div className='flex flex-col h-full w-auto'>
+                            <Tabs defaultValue="code" className="h-full flex flex-col">
+                                <div className="flex border-b items-center justify-between">
+                                    <TabsList className="my-2 mx-4 rounded-full">
+                                        <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
+                                        <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
+                                    </TabsList>
+                                    <div className='flex' suppressHydrationWarning>
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <PrivateButton workspaceId={workspace.id} />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Is Private
+                                            </TooltipContent>
+                                        </Tooltip>
+                                        {!loading ? <Tooltip>
+                                            <TooltipTrigger>
+                                                <GithubConnectButton
+                                                    workspaceId={workspace.id}
+                                                    isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
+                                                    repoUrl={workspace.githubRepo?.repoUrl ?? ""}
+                                                    hasUnpushedChanges={!isChangesPushed}
+                                                    workspaceTitle={title}
+                                                />
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Connect to Github
+                                            </TooltipContent>
+                                        </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />}
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <Button variant="link" size='icon' className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                Export
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
                                 </div>
-                            </div>
 
-                            {files != null && <SandpackViewer files={files} />}
-                        </Tabs>
-                    </div>
-                </ResizablePanel>
+                                {files != null && <SandpackViewer files={files} />}
+                            </Tabs>
+                        </div>
+                    </ResizablePanel>
+                </>}
             </ResizablePanelGroup>
         </div>
     );
