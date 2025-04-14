@@ -105,9 +105,26 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
         }
     }
 
+    const handleEditorWillMount = (monaco: Monaco) => {
+        // Disable validation
+        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+            noSemanticValidation: true,
+            noSyntaxValidation: true,
+        });
+
+        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+            noSemanticValidation: true,
+            noSyntaxValidation: true,
+        });
+
+        monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
+            validate: false,
+        });
+    };
+
     return (
         <ScrollArea className="h-full flex-1">
-            <div className="h-full">
+            <div className="h-full flex flex-col">
                 <div className="flex overflow-x-auto">
                     {selectedFiles.map((filepath, index) => (
                         <div
@@ -145,6 +162,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
                     value={getFileContent(selectedFile)}
                     theme={editorTheme}
                     path={selectedFile}
+                    beforeMount={handleEditorWillMount}
                     options={{
                         readOnly: true,
                         minimap: { enabled: true },
@@ -158,6 +176,17 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
                         cursorBlinking: 'smooth',
                         cursorSmoothCaretAnimation: 'on',
                         roundedSelection: true,
+                        wrappingStrategy: 'advanced',
+                        formatOnType: true,
+                        formatOnPaste: true,
+                        folding: true,
+                        foldingStrategy: 'auto',
+                        autoIndent: 'full',
+                        matchBrackets: 'always',
+                        dragAndDrop: true,
+                        quickSuggestions: true,
+                        foldingHighlight: false,
+                        "semanticHighlighting.enabled": false,
                     }}
                 />
             </div>

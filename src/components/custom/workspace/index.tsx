@@ -305,8 +305,6 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                             <ReactMarkdown
                                                 allowedElements={allowedHTMLElements}
                                                 className={styles.MarkdownContent}
-                                                remarkPlugins={remarkPlugins(false)}
-                                                rehypePlugins={rehypePlugins(true)}
                                             >{message.content}</ReactMarkdown>
                                         </div>
                                     </div>
@@ -375,7 +373,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                     </div>
                                 </div>
 
-                                {files != null && <SandpackViewer files={files} />}
+                                {files != null && <SandpackViewer />}
                             </Tabs>
                         </div>
                     </ResizablePanel>

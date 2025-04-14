@@ -8,9 +8,9 @@ import { CodeEditor } from '../code-editor';
 import { FileExplorer } from '../file-explorer';
 import { Preview } from '../preview';
 
-const SandpackViewer = ({ files }: { files: FileSystem }) => {
+const SandpackViewer = () => {
     const { resolvedTheme } = useTheme();
-    const { selectedFile, setSelectedFile, selectedFiles, setSelectedFiles } = useWorkspaceData();
+    const { selectedFile, setSelectedFile, selectedFiles, setSelectedFiles, files, setFiles } = useWorkspaceData();
     return (
         <SandpackProvider
             theme={resolvedTheme == 'dark' ? "dark" : undefined}
@@ -24,7 +24,7 @@ const SandpackViewer = ({ files }: { files: FileSystem }) => {
             }}
             template="react-ts"
             className='h-full flex-1 flex-grow !text-sm'
-            files={files}
+            files={files!}
             style={{
                 height: "100%",
             }}
