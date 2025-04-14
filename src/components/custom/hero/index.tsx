@@ -26,7 +26,7 @@ const Hero = ({ user }: { user: any }) => {
         if (messages) {
             const workspace = await createWorkspace(messages, user, scrapeUrl);
             if (workspace)
-                router.replace(`/workspace/${workspace.id}`);
+                window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/workspace/${workspace.id}`;
         }
     }
 
