@@ -39,6 +39,11 @@ const WorkspaceHistory = () => {
         router.push('/')
     }
 
+    const handleToggle = (id: string) => {
+        window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/workspace/${id}`
+        toggleSidebar();
+    }
+
     return (
         <div className='flex flex-col'>
             {workspaceList && workspaceList?.map((workspace: any, index: number) => {
@@ -47,9 +52,9 @@ const WorkspaceHistory = () => {
                         <SidebarMenuButton className='flex'>
                             <Tooltip delayDuration={1000}>
                                 <TooltipTrigger>
-                                    <Link onClick={toggleSidebar} href={`/workspace/${workspace.id}`} className='flex-1'>
+                                    <button onClick={() => handleToggle(workspace.id)} className='flex-1'>
                                         {truncate(workspace.title ?? workspace.Messages[0].content)}
-                                    </Link>
+                                    </button>
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     {workspace.title ?? workspace.Messages[0].content}
