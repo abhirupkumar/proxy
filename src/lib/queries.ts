@@ -338,5 +338,3 @@ export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: str
         throw error;
     }
 }
-
-export const runtime = "edge";
