@@ -75,7 +75,7 @@ export function Preview({ files }: PreviewFrameProps) {
                         className="font-mono text-sm"
                     />
                 </div>
-                <div className="flex-1 w-full h-[100vh] bg-white">
+                <div className="flex-1 w-full h-[100vh]">
                     <iframe
                         ref={iframe}
                         title="Custom Preview"

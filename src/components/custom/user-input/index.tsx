@@ -29,12 +29,24 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                 <textarea
                     disabled={disabled ?? false}
                     onKeyDown={(e) => {
-                        if (e.key == 'Enter' && userInput != null && userInput != "") onGenerate(userInput);
+                        if (e.key === 'Enter') {
+                            if (e.ctrlKey) {
+                                // Insert new line
+                                setUserInput(userInput + '\n');
+                                e.preventDefault();
+                            } else if (userInput != null && userInput.trim() !== "") {
+                                e.preventDefault();
+                                setUserInput(userInput.trim());
+                                onGenerate(userInput);
+                            }
+                        }
                     }}
                     placeholder={!disabled ? Lookup.INPUT_PLACEHOLDER : "Log in to use/fork the workspace."}
                     value={userInput || ""}
                     onChange={(event) => setUserInput(event.target.value)}
-                    className='outline-none border-none bg-transparent w-full !min-h-6 !max-h-56 resize-none' />
+                    className="outline-none border-none bg-transparent w-full !min-h-6 !max-h-56 resize-none"
+                />
+
                 {!loading && userInput && <ArrowRight
                     onClick={() => onGenerate(userInput)}
                     className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
