@@ -7,14 +7,7 @@ import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Cross, FileText, X } from "lucide-react";
 import Image from "next/image";
-
-interface FileExplorerProps {
-    selectedFile: string | null;
-    fileSystem: FileSystem;
-    selectedFiles: string[];
-    setSelectedFile: Dispatch<SetStateAction<string | null>>;
-    setSelectedFiles: Dispatch<SetStateAction<string[]>>;
-}
+import { useWorkspaceData } from "@/context/WorkspaceDataContext";
 
 interface FileData {
     code: string;
@@ -24,11 +17,13 @@ interface FileSystem {
     [key: string]: FileData;
 }
 
-export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelectedFile, setSelectedFiles }: FileExplorerProps) {
+export function CodeEditor() {
     const { resolvedTheme } = useTheme();
     const editorRef = useRef<any>(null)
     const monacoRef = useRef<any>(null)
     const [editorTheme, setEditorTheme] = useState("vs")
+
+    const { selectedFile, files: fileSystem, selectedFiles, setSelectedFile, setSelectedFiles } = useWorkspaceData();
 
     useEffect(() => {
         if (resolvedTheme === "dark") {
@@ -47,6 +42,7 @@ export function CodeEditor({ selectedFile, fileSystem, selectedFiles, setSelecte
     }
 
     const getFileContent = (path: string) => {
+        if (!fileSystem) return "// File not found";
         return fileSystem[path]?.code || "// File not found";
     };
 

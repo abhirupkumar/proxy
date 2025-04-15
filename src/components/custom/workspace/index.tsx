@@ -340,36 +340,18 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                         <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                     </TabsList>
                                     <div className='flex' suppressHydrationWarning>
-                                        {userId == dbUser.clerkId && <Tooltip delayDuration={1000}>
-                                            <TooltipTrigger>
-                                                <PrivateButton workspaceId={workspace.id} />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                {workspace.isPrivate ? "Private" : "Public"}
-                                            </TooltipContent>
-                                        </Tooltip>}
-                                        {userId == dbUser.clerkId && (!loading ? <Tooltip delayDuration={1000}>
-                                            <TooltipTrigger>
-                                                <GithubConnectButton
-                                                    workspaceId={workspace.id}
-                                                    isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
-                                                    repoUrl={workspace.githubRepo?.repoUrl ?? ""}
-                                                    hasUnpushedChanges={!isChangesPushed}
-                                                    workspaceTitle={title}
-                                                />
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Connect to Github
-                                            </TooltipContent>
-                                        </Tooltip> : <Skeleton className='w-6 h-6 rounded-full' />)}
-                                        <Tooltip delayDuration={1000}>
-                                            <TooltipTrigger>
-                                                <Button variant="link" size='icon' className='mr-4' onClick={handleDownload}><Download className='h-4 w-4 text-primary' /></Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                Export
-                                            </TooltipContent>
-                                        </Tooltip>
+                                        {userId == dbUser.clerkId && <PrivateButton workspaceId={workspace.id} />}
+                                        {userId == dbUser.clerkId && (!loading ? <GithubConnectButton
+                                            workspaceId={workspace.id}
+                                            isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
+                                            repoUrl={workspace.githubRepo?.repoUrl ?? ""}
+                                            hasUnpushedChanges={!isChangesPushed}
+                                            workspaceTitle={title}
+                                        /> : <Skeleton className='w-6 h-6 rounded-full' />)}
+
+                                        <Button title='Export' variant="link" size='icon' className='mr-4' onClick={handleDownload}>
+                                            <Download className='h-4 w-4 text-primary' />
+                                        </Button>
                                     </div>
                                 </div>
 

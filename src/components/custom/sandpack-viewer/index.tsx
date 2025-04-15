@@ -33,8 +33,8 @@ const SandpackViewer = () => {
             {/* <SandpackLayout className='flex flex-col'> */}
             <div className='flex flex-col'>
                 <TabsContent value="code" className="m-0 h-full w-full flex bg-background">
-                    {files && <FileExplorer selectedFile={selectedFile} setSelectedFile={setSelectedFile} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} fileSystem={files} />}
-                    {files && <CodeEditor selectedFile={selectedFile} setSelectedFile={setSelectedFile} fileSystem={files} selectedFiles={selectedFiles} setSelectedFiles={setSelectedFiles} />}
+                    {files && <FileExplorer />}
+                    {files && <CodeEditor />}
                 </TabsContent>
 
                 <TabsContent value="preview" className="m-0 h-full">

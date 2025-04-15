@@ -164,6 +164,7 @@ export function GithubConnectButton({
                 onClick={handleButtonClick}
                 disabled={isLoading}
                 className="flex items-center gap-2"
+                title={getButtonText()}
             >
                 {isLoading ? (
                     <>

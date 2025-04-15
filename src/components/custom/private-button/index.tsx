@@ -17,7 +17,7 @@ const PrivateButton = ({ workspaceId }: { workspaceId: string }) => {
     };
 
     return (
-        <Button variant='link' size='icon' onClick={handleClick} disabled={loading}>
+        <Button title={isPrivate ? "Private" : "Public"} variant='link' size='icon' onClick={handleClick} disabled={loading}>
             {isPrivate ? <LockKeyhole /> : <LockKeyholeOpen />}
         </Button>
     )
