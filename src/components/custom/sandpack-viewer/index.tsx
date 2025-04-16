@@ -28,7 +28,7 @@ const SandpackViewer = () => {
             style={{
                 height: "100%",
             }}
-            suppressHydrationWarning={false}
+            suppressHydrationWarning={true}
         >
             {/* <SandpackLayout className='flex flex-col'> */}
             <div className='flex flex-col'>

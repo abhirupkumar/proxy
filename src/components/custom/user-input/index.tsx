@@ -58,14 +58,9 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                 </SignInButton>}
             </div>
             {!disabled && <>
-                <Tooltip>
-                    <TooltipTrigger><span className={``} onClick={() => setOpen(!open)}>
-                        <Link className='h-5 w-5' />
-                    </span></TooltipTrigger>
-                    <TooltipContent>
-                        <p>Add Link</p>
-                    </TooltipContent>
-                </Tooltip>
+                <button title='Add Link' onClick={() => setOpen(!open)}>
+                    <Link className='h-4 w-4' />
+                </button>
                 {open && <Input className='text-sm w-fit' type="url" placeholder="https://example.com" value={scrapeUrl} onKeyDown={(e) => {
                     if (e.key == 'Enter' && scrapeUrl != null && scrapeUrl != "")
                         setOpen(false);

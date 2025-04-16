@@ -12,10 +12,10 @@ import { Trash2 } from 'lucide-react';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { Button } from '@/components/ui/button';
 
-const DeleteButton = ({ onClick }: { onClick: any }) => {
+const DeleteButton = ({ className, onClick }: { className?: string, onClick: any }) => {
     return (
         <Dialog>
-            <DialogTrigger asChild><Trash2 /></DialogTrigger>
+            <DialogTrigger className={className ?? ""} asChild><Trash2 /></DialogTrigger>
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Are you sure?</DialogTitle>

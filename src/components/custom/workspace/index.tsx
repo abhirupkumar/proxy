@@ -276,22 +276,8 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                         <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
                             <h2>{title != "" ? title : "New Chat"}</h2>
                             <span className='flex' suppressHydrationWarning>
-                                <Tooltip delayDuration={1000}>
-                                    <TooltipTrigger>
-                                        <Link href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        New Chat
-                                    </TooltipContent>
-                                </Tooltip>
-                                <Tooltip delayDuration={1000}>
-                                    <TooltipTrigger>
-                                        {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        Fork
-                                    </TooltipContent>
-                                </Tooltip>
+                                <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
+                                {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
                             </span>
                         </div>
                         <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[720px]'>
