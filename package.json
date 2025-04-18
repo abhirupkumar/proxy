@@ -10,6 +10,7 @@
     "pages:build": "npx @cloudflare/next-on-pages --experimental-minify",
     "preview": "npm run pages:build && wrangler pages dev",
     "deploy": "npm run pages:build && wrangler pages deploy",
+    "cf-typegen": "wrangler types --env-interface CloudflareEnv env.d.ts",
     "postinstall": "npx prisma generate --no-engine"
   },
   "dependencies": {
