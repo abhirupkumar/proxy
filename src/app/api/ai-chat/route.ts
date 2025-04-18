@@ -2,7 +2,7 @@ import { groq } from '@/lib/groq';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-    const { prompt, systemPrompt } = await req.json();
+    const { prompt, systemPrompt } = await req.json() as { prompt: any, systemPrompt: string };
 
     const messages = [
         {

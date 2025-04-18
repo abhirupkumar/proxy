@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     if (!user)
         return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
 
-    const { messages, tool } = await req.json();
+    const { messages, tool } = await req.json() as { messages: any, tool: any };
 
     try {
 

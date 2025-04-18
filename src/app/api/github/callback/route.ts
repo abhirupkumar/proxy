@@ -39,7 +39,7 @@ export async function GET(request: Request) {
             }),
         });
 
-        const tokenData = await tokenResponse.json();
+        const tokenData = await tokenResponse.json() as any;
 
         if (!tokenData.access_token) {
             return NextResponse.json({ error: 'Failed to obtain access token' }, { status: 400 });

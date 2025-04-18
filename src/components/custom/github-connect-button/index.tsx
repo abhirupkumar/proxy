@@ -50,7 +50,7 @@ export function GithubConnectButton({
                 body: JSON.stringify({ workspaceId }),
             });
 
-            const data = await response.json();
+            const data = await response.json() as any;
             if (data.authUrl) {
                 // Store workspaceId in session storage to retrieve after OAuth
                 sessionStorage.setItem('github_connect_workspace', workspaceId);
@@ -103,7 +103,7 @@ export function GithubConnectButton({
                 }),
             });
 
-            const data = await response.json();
+            const data = await response.json() as any;
 
             if (response.ok) {
                 router.refresh(); // Refresh the page to show updated connection status
@@ -131,7 +131,7 @@ export function GithubConnectButton({
                 body: JSON.stringify({ workspaceId }),
             });
 
-            const data = await response.json();
+            const data = await response.json() as any;
 
             if (response.ok) {
                 // Show success notification

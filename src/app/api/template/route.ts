@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
     const user = await currentUser();
     if (!user)
         return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
-    const { prompt } = await req.json();
+    const { prompt } = await req.json() as any;
 
     try {
         const result = await gemini.generateContent({

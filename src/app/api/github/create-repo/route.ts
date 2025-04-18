@@ -11,7 +11,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { workspaceId, repoName, description, isPrivate } = await req.json();
+        const { workspaceId, repoName, description, isPrivate } = await req.json() as {
+            workspaceId: string;
+            repoName: string;
+            description: string;
+            isPrivate: boolean;
+        };
 
         // Validate input
         if (!workspaceId || !repoName) {
