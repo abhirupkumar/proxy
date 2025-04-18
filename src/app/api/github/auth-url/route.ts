@@ -13,7 +13,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { workspaceId } = await req.json();
+        const { workspaceId } = await req.json() as any;
 
         // Check if workspace belongs to user
         const dbUser = await db.user.findUnique({
