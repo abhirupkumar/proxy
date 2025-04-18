@@ -9,7 +9,7 @@ import { Message, useWorkspaceData } from '@/context/WorkspaceDataContext';
 import Lookup from '@/data/Lookup';
 import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { StreamingMessageParser } from '@/lib/stream-parser';
-import { allowedHTMLElements, rehypePlugins, remarkPlugins, val } from '@/lib/utils';
+import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
 import JSZip from 'jszip';
 import { ArrowRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -74,7 +74,6 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         setTitle(workspace.title);
         setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
-        // onFilesUpdate(workspace.id, val)
     }, [workspace]);
 
 
