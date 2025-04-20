@@ -30,6 +30,14 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 
+type ImageItem = {
+    id: string;
+    file?: File;
+    url?: string;
+    status: 'uploading' | 'success' | 'error';
+    error?: string;
+};
+
 const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
@@ -40,6 +48,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
     const [userInput, setUserInput] = useState<string | null | undefined>('');
     const [scrapeUrl, setScrapeUrl] = useState<string>('');
+    const [images, setImages] = useState<ImageItem[]>([]);
     const [latestUrl, setLatestUrl] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -60,10 +69,11 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
 
     useEffect(() => {
         const sortedMessages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt)
-        setMessages(sortedMessages.map((msg: any) => ({
+        setMessages(sortedMessages.map((msg: Message) => ({
             role: msg.role,
             content: msg.content,
             url: msg.url,
+            photoUrls: msg.photoUrls ?? [],
         })) ?? []);
         if (sortedMessages.length > 0 && sortedMessages[sortedMessages.length - 1].url && sortedMessages[sortedMessages.length - 1].url != "") {
             setLatestUrl(sortedMessages[sortedMessages.length - 1].url);
@@ -163,11 +173,13 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         setUserInput('');
         setLoading(true);
         setLatestUrl(scrapeUrl);
-        await onMessagesUpdate(null, 'user', content, workspace.id, scrapeUrl);
+        const imageUrls = images.map((image) => image.url).filter((url) => url !== undefined) as string[];
+        await onMessagesUpdate(null, 'user', content, workspace.id, scrapeUrl, imageUrls);
         setMessages((prev: Message[]) => [...prev, {
             role: 'user',
             content: content
         }]);
+        setImages([]);
         setScrapeUrl("");
         setLoading(false);
     }
@@ -280,12 +292,18 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                             </span>
                         </div>
                         <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[720px]'>
-                            {messages.length > 0 && messages?.map((message: any, index: number) => (
+                            {messages.length > 0 && messages?.map((message: Message, index: number) => (
                                 <div key={index} className='w-full flex flex-col'>
                                     {message.url && message.url != "" && <Link href={message.url} target="_blank" rel='noopener noreferrer' className="text-sm text-right text-blue-400">@{message.url}</Link>}
+                                    {message.photoUrls && message.photoUrls.length > 0 &&
+                                        <div className='flex gap-2 items-start rounded-lg p-2 mb-2 h-24 w-24'>
+                                            {message.photoUrls.map((photoUrl: string, index: number) => (
+                                                <img key={index} className='rounded-lg' src={photoUrl} alt="scraped image" height={100} width={100} />
+                                            ))}
+                                        </div>}
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
-                                    <div className={`flex gap-2 items-start rounded-full p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
-                                        {loading == true && message?.role == 'ai' && <Loader2 className='h-4 w-4 animate-spin' />}
+                                    <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
+                                        {loading == true && message?.role == 'assistant' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="whitespace-pre-wrap">
                                             <ReactMarkdown
                                                 allowedElements={allowedHTMLElements}
@@ -311,7 +329,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
+                        <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
                     </div>
                 </ResizablePanel>
                 {isLoaded && isSignedIn && <>

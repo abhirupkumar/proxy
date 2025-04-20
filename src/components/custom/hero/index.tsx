@@ -10,9 +10,18 @@ import { useState } from 'react';
 import ButtonLoader from '../button-loader';
 import UserInput from '../user-input';
 
+type ImageItem = {
+    id: string;
+    file?: File;
+    url?: string;
+    status: 'uploading' | 'success' | 'error';
+    error?: string;
+};
+
 const Hero = ({ user }: { user: any }) => {
     const [userInput, setUserInput] = useState<string | null>();
     const [scrapeUrl, setScrapeUrl] = useState<string>('');
+    const [images, setImages] = useState<ImageItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
     const onGenerate = async (input: string) => {
@@ -24,7 +33,8 @@ const Hero = ({ user }: { user: any }) => {
         setLoading(true);
         const messages = { role: "user", content: input }
         if (messages) {
-            const workspace = await createWorkspace(messages, user, scrapeUrl);
+            const imageUrls = images.map((image) => image.url).filter((url) => url !== undefined) as string[];
+            const workspace = await createWorkspace(messages, user, scrapeUrl, imageUrls);
             if (workspace)
                 window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/workspace/${workspace.id}`;
         }
@@ -35,7 +45,7 @@ const Hero = ({ user }: { user: any }) => {
             <Spotlight />
             <h2 className='font-bold text-4xl'>{Lookup.HERO_HEADING}</h2>
             <p className='text-muted-foreground font-medium'>{Lookup.HERO_DESC}</p>
-            <UserInput onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} />
+            <UserInput onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
             <div className='flex mt-8 flex-wrap max-w2xl items-center justify-center gap-3 text-muted-foreground'>
                 {Lookup?.SUGGSTIONS.map((suggestion, index) => (
                     <button

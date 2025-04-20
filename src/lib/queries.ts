@@ -32,7 +32,7 @@ export const getUser = async () => {
     }
 }
 
-export const createWorkspace = async (messages: { role: string, content: string }, user: any, scrapeUrl: string) => {
+export const createWorkspace = async (messages: { role: string, content: string }, user: any, scrapeUrl: string, images: string[]) => {
     try {
         const workspace = await db.workspace.create({
             data: {
@@ -42,7 +42,8 @@ export const createWorkspace = async (messages: { role: string, content: string 
                     create: {
                         role: messages.role,
                         content: messages.content,
-                        url: scrapeUrl
+                        url: scrapeUrl,
+                        photoUrls: images,
                     }
                 }
             },
@@ -199,14 +200,15 @@ export async function onFilesUpdate(id: string, files: any) {
     console.log(files)
 }
 
-export async function onMessagesUpdate(id: string | null, role: string, content: string, workspaceId: string, scrapeUrl: string) {
+export async function onMessagesUpdate(id: string | null, role: string, content: string, workspaceId: string, scrapeUrl: string, images?: string[]) {
     if (id == null) {
         await db.message.create({
             data: {
                 role: role,
                 content: content,
                 workspaceId: workspaceId,
-                url: scrapeUrl
+                url: scrapeUrl,
+                photoUrls: images ?? []
             }
         })
     }

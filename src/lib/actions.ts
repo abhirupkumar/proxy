@@ -4,6 +4,28 @@ import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { db } from './db';
 
+import { Storage } from '@google-cloud/storage';
+import { v4 as uuidv4 } from 'uuid';
+
+// Define a response type for our upload
+type UploadResponse = {
+    success: boolean;
+    url?: string;
+    error?: string;
+};
+
+// Initialize Google Cloud Storage
+const storage = new Storage({
+    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
+    credentials: {
+        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+    },
+});
+
+const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'your-bucket-name';
+const bucket = storage.bucket(bucketName);
+
 // Function to extract unique colors from CSS
 function extractColorsFromCSS(css: string): string[] {
     const colorRegex = /(?:#(?:[0-9a-fA-F]{3}){1,2})|(?:rgb\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*\))|(?:rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*[\d.]+\))|(?:hsl\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*\))|(?:hsla\(\s*\d+\s*,\s*\d+%\s*,\s*\d+%\s*,\s*[\d.]+\))|(?:transparent)|(?:currentColor)|(?:\b(?:red|blue|green|yellow|orange|purple|pink|black|white|gray|cyan|magenta)\b)/gi;
@@ -238,5 +260,49 @@ export const scrapeFromUrl = async (targetUrl: string, text: string, workspaceId
         if (browser) {
             await browser.close();
         }
+    }
+}
+
+export async function uploadImage(formData: FormData): Promise<UploadResponse> {
+    try {
+        const file = formData.get('image') as File;
+
+        if (!file) {
+            return { success: false, error: 'No file provided' };
+        }
+
+        // Create a buffer from the file
+        const buffer = Buffer.from(await file.arrayBuffer());
+
+        // Generate a unique filename with UUID
+        const fileExtension = file.name.split('.').pop();
+        const fileName = `uploads/${uuidv4()}.${fileExtension}`;
+
+        // Create a reference to the file in the bucket
+        const blob = bucket.file(fileName);
+
+        // Upload the file to Google Cloud Storage
+        await blob.save(buffer, {
+            metadata: {
+                contentType: file.type,
+            },
+        });
+
+        // Make the file publicly accessible
+        await blob.makePublic();
+
+        // Generate the public URL
+        const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
+
+        // Here you would typically save the URL to your database
+        // await db.images.create({ data: { url: publicUrl } });
+
+        return { success: true, url: publicUrl };
+    } catch (error) {
+        console.error('Error uploading file:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
     }
 }

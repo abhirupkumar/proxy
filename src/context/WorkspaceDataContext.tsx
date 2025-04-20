@@ -4,6 +4,7 @@ export interface Message {
     role: 'user' | "assistant",
     content: string,
     url?: string | null | undefined,
+    photoUrls?: string[]
 }
 
 export interface FileSystem {

@@ -43,6 +43,7 @@ model Message {
   content        String
   url            String?
   urlScrapedData Json?
+  photoUrls      String[]  @default([])
   createdAt      DateTime  @default(now())
   workspaceId    String    @db.Uuid
   Workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)

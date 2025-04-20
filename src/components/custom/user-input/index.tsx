@@ -1,7 +1,7 @@
 import { GlowingEffect } from '@/components/ui/glowing-effect';
 import Lookup from '@/data/Lookup';
-import { ArrowRight, Link } from 'lucide-react';
-import React, { Dispatch, SetStateAction, useState } from 'react'
+import { ArrowRight, CrossIcon, Image, ImageIcon, ImagePlusIcon, Link, XIcon } from 'lucide-react';
+import React, { Dispatch, SetStateAction, useRef, useState } from 'react'
 import ButtonLoader from '../button-loader';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
@@ -9,12 +9,95 @@ import { SignInButton, useAuth } from '@clerk/nextjs';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { uploadImage } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
-const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl }: { disabled?: boolean, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>> }) => {
+type ImageItem = {
+    id: string;
+    file?: File;
+    url?: string;
+    status: 'uploading' | 'success' | 'error';
+    error?: string;
+};
+
+
+const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
     const [open, setOpen] = useState<boolean>(false);
     const { isLoaded, isSignedIn } = useAuth();
     const pathname = usePathname();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files || e.target.files.length === 0) return;
+
+        const newFiles = Array.from(e.target.files);
+
+        // Create pending upload items
+        const newImageItems: ImageItem[] = newFiles.map(file => ({
+            id: crypto.randomUUID(),
+            file,
+            status: 'uploading'
+        }));
+
+        // Add the new items to our state
+        setImages(prev => [...prev, ...newImageItems]);
+
+        // Reset the file input for future selections
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+
+        // Upload each file concurrently
+        const uploadPromises = newImageItems.map(async (item) => {
+            if (!item.file) return;
+
+            const formData = new FormData();
+            formData.append('image', item.file);
+
+            try {
+                const result = await uploadImage(formData);
+
+                if (result.success && result.url) {
+                    setImages(current =>
+                        current.map(img =>
+                            img.id === item.id
+                                ? { ...img, url: result.url, status: 'success' as const }
+                                : img
+                        )
+                    );
+                } else {
+                    // Remove the failed image from the array
+                    setImages(current => current.filter(img => img.id !== item.id));
+
+                    // Show error toast
+                    toast({
+                        title: "Upload failed",
+                        description: result.error || "Failed to upload image",
+                        variant: "destructive",
+                    });
+                }
+            } catch (error) {
+                // Remove the failed image from the array
+                setImages(current => current.filter(img => img.id !== item.id));
+
+                // Show error toast
+                toast({
+                    title: "Upload failed",
+                    description: "Couldn't upload the image.",
+                    variant: "destructive",
+                });
+            }
+        });
+
+        // Wait for all uploads to complete
+        await Promise.all(uploadPromises);
+    };
+
+    const removeImage = (id: string) => {
+        setImages(current => current.filter(img => img.id !== id));
+    };
 
     return (
         <div className='px-5 py-3 border items-center rounded-xl max-w-3xl w-full mt-3 bg-secondary relative'>
@@ -25,6 +108,47 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                 proximity={64}
                 inactiveZone={0.01}
             />
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {images.map((image) => (
+                    <div
+                        key={image.id}
+                        className="relative border rounded-md overflow-hidden h-24 w-24"
+                    >
+                        {/* Skeleton loader */}
+                        {image.status === 'uploading' && (
+                            <div className="animate-pulse flex flex-col h-full w-full">
+                                <div className="bg-primary h-full w-full"></div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <svg className="animate-spin h-4 w-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Successfully uploaded image */}
+                        {image.status === 'success' && image.url && (
+                            <div className="h-full">
+                                <img
+                                    src={image.url}
+                                    alt="Uploaded image"
+                                    width={200}
+                                    height={200}
+                                    className="object-cover h-full w-full"
+                                />
+                            </div>
+                        )}
+
+                        <button
+                            onClick={() => removeImage(image.id)}
+                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 focus:outline-none"
+                        >
+                            <XIcon className='!h-3 !w-3' />
+                        </button>
+                    </div>
+                ))}
+            </div>
             <div className='flex gap-2'>
                 <textarea
                     disabled={disabled ?? false}
@@ -57,16 +181,33 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                     </Button>
                 </SignInButton>}
             </div>
-            {!disabled && <>
-                <button title='Add Link' onClick={() => setOpen(!open)}>
-                    <Link className='h-4 w-4' />
+            {!disabled && <div className='flex gap-x-2 items-center'>
+                <label
+                    htmlFor="dropzone-file"
+                    className="flex flex-col items-center justify-center cursor-pointer"
+                >
+                    <div className="flex items-center justify-center">
+                        <ImagePlusIcon className='!h-4 mr-0' />
+                    </div>
+                    <Input
+                        id="dropzone-file"
+                        type="file"
+                        className="hidden"
+                        multiple
+                        accept="image/*"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                    />
+                </label>
+                <button className='flex items-center' title='Add Link' onClick={() => setOpen(!open)}>
+                    <Link className='!h-4' />
                 </button>
                 {open && <Input className='text-sm w-fit' type="url" placeholder="https://example.com" value={scrapeUrl} onKeyDown={(e) => {
                     if (e.key == 'Enter' && scrapeUrl != null && scrapeUrl != "")
                         setOpen(false);
                 }} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScrapeUrl(e.target.value)} />}
                 {!open && <p className='text-sm w-fit'>{scrapeUrl}</p>}
-            </>}
+            </div>}
         </div>
     )
 }
