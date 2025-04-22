@@ -9,12 +9,14 @@ import { SignInButton, useAuth } from '@clerk/nextjs';
 import NextLink from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { uploadImage } from '@/lib/actions';
+import { deleteImage, uploadImage } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import NextImage from 'next/image';
 
 type ImageItem = {
     id: string;
     file?: File;
+    fileId?: string;
     url?: string;
     status: 'uploading' | 'success' | 'error';
     error?: string;
@@ -63,7 +65,12 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                     setImages(current =>
                         current.map(img =>
                             img.id === item.id
-                                ? { ...img, url: result.url, status: 'success' as const }
+                                ? {
+                                    ...img,
+                                    url: result.url,
+                                    fileId: result.fileId,
+                                    status: 'success' as const
+                                }
                                 : img
                         )
                     );
@@ -96,7 +103,26 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
     };
 
     const removeImage = (id: string) => {
+        // Find the image by ID
+        const imageToRemove = images.find(img => img.id === id);
+
+        // Remove it from state regardless of remote deletion success
         setImages(current => current.filter(img => img.id !== id));
+
+        // If it was successfully uploaded (and has a fileId), delete it from ImageKit
+        // We don't await this since we want the UI to respond immediately
+        if (imageToRemove?.fileId) {
+            deleteImage(imageToRemove.fileId)
+                .catch(error => {
+                    console.error('Failed to delete image from ImageKit:', error);
+                    // Optionally show a toast on error
+                    toast({
+                        title: "Delete failed",
+                        description: "The image was removed from your list but could not be deleted from storage",
+                        variant: "destructive",
+                    });
+                });
+        }
     };
 
     return (
@@ -108,7 +134,7 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                 proximity={64}
                 inactiveZone={0.01}
             />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="flex gap-x-3">
                 {images.map((image) => (
                     <div
                         key={image.id}
@@ -130,12 +156,12 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                         {/* Successfully uploaded image */}
                         {image.status === 'success' && image.url && (
                             <div className="h-full">
-                                <img
-                                    src={image.url}
+                                <NextImage
+                                    src={image.url ?? ""}
                                     alt="Uploaded image"
                                     width={200}
                                     height={200}
-                                    className="object-cover h-full w-full"
+                                    className="object-contain h-full w-full"
                                 />
                             </div>
                         )}
@@ -189,12 +215,15 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                     <div className="flex items-center justify-center">
                         <ImagePlusIcon className='!h-4 mr-0' />
                     </div>
+                    {/*  maximum 5 files can be added */}
                     <Input
                         id="dropzone-file"
                         type="file"
                         className="hidden"
                         multiple
                         accept="image/*"
+                        maxLength={5}
+                        disabled={images.length >= 5}
                         ref={fileInputRef}
                         onChange={handleImageUpload}
                     />

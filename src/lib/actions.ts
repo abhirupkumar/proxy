@@ -3,28 +3,23 @@
 import * as puppeteer from 'puppeteer';
 import * as cheerio from 'cheerio';
 import { db } from './db';
+import ImageKit from 'imagekit';
 
-import { Storage } from '@google-cloud/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 // Define a response type for our upload
 type UploadResponse = {
     success: boolean;
+    fileId?: string;
     url?: string;
     error?: string;
 };
 
-// Initialize Google Cloud Storage
-const storage = new Storage({
-    projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-    credentials: {
-        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    },
+const imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY || '',
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || '',
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || ''
 });
-
-const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'your-bucket-name';
-const bucket = storage.bucket(bucketName);
 
 // Function to extract unique colors from CSS
 function extractColorsFromCSS(css: string): string[] {
@@ -274,32 +269,64 @@ export async function uploadImage(formData: FormData): Promise<UploadResponse> {
         // Create a buffer from the file
         const buffer = Buffer.from(await file.arrayBuffer());
 
-        // Generate a unique filename with UUID
+        // Generate a unique filename
         const fileExtension = file.name.split('.').pop();
-        const fileName = `uploads/${uuidv4()}.${fileExtension}`;
+        const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExtension}`;
 
-        // Create a reference to the file in the bucket
-        const blob = bucket.file(fileName);
-
-        // Upload the file to Google Cloud Storage
-        await blob.save(buffer, {
-            metadata: {
-                contentType: file.type,
-            },
+        // Upload the file to ImageKit
+        const result = await imagekit.upload({
+            file: buffer,
+            fileName: fileName,
+            folder: '/proxy-studio/', // Optional folder path inside your ImageKit media library
+            useUniqueFileName: true,
         });
 
-        // Make the file publicly accessible
-        await blob.makePublic();
-
-        // Generate the public URL
-        const publicUrl = `https://storage.googleapis.com/${bucketName}/${fileName}`;
-
-        // Here you would typically save the URL to your database
-        // await db.images.create({ data: { url: publicUrl } });
-
-        return { success: true, url: publicUrl };
+        // Return the URL of the uploaded image
+        return {
+            success: true,
+            fileId: result.fileId, // This is the unique ID of the uploaded file
+            url: result.url // This is the URL to access the image
+        };
     } catch (error) {
         console.error('Error uploading file:', error);
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error occurred'
+        };
+    }
+}
+
+export async function deleteImage(fileId: string): Promise<{
+    success: boolean;
+    error?: string;
+}> {
+    try {
+        // Extract the file ID from the URL if a full URL was provided
+        // ImageKit file IDs are typically at the end of the URL path after the last '/'
+        let extractedFileId = fileId;
+        if (fileId.includes('/')) {
+            extractedFileId = fileId.split('/').pop() || '';
+
+            // If the URL contains a transformation, we need to get the base file ID
+            if (extractedFileId.includes('?')) {
+                extractedFileId = extractedFileId.split('?')[0];
+            }
+        }
+
+        // If we still don't have a valid fileId, return an error
+        if (!extractedFileId) {
+            return {
+                success: false,
+                error: 'Invalid file ID'
+            };
+        }
+
+        // Delete the file from ImageKit
+        await imagekit.deleteFile(extractedFileId);
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting file from ImageKit:', error);
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
