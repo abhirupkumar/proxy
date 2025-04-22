@@ -4,11 +4,6 @@ import { getWorkspace } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface Message {
-    "role": "user" | "assistant",
-    "parts": [{ "text": string }]
-}
-
 export async function POST(req: NextRequest) {
     try {
         const user = await currentUser();
