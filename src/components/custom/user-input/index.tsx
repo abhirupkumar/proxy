@@ -13,6 +13,8 @@ import { deleteImage, uploadImage } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
 
+const MAXIMUM_IMAGES = 4;
+
 type ImageItem = {
     id: string;
     file?: File;
@@ -35,6 +37,15 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
         if (!e.target.files || e.target.files.length === 0) return;
 
         const newFiles = Array.from(e.target.files);
+
+        if (newFiles.length > MAXIMUM_IMAGES) {
+            toast({
+                title: "Image Limit Exceeded",
+                description: `You can only upload up to ${MAXIMUM_IMAGES} images at a time.`,
+                variant: "destructive",
+            });
+            return;
+        }
 
         // Create pending upload items
         const newImageItems: ImageItem[] = newFiles.map(file => ({
@@ -212,7 +223,7 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                     htmlFor="dropzone-file"
                     className="flex flex-col items-center justify-center cursor-pointer"
                 >
-                    <div className="flex items-center justify-center">
+                    <div title='Upload Image' className="flex items-center justify-center">
                         <ImagePlusIcon className='!h-4 mr-0' />
                     </div>
                     {/*  maximum 5 files can be added */}
@@ -220,10 +231,9 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                         id="dropzone-file"
                         type="file"
                         className="hidden"
-                        multiple
+                        multiple={images.length <= MAXIMUM_IMAGES}
                         accept="image/*"
-                        maxLength={5}
-                        disabled={images.length >= 5}
+                        disabled={images.length >= MAXIMUM_IMAGES}
                         ref={fileInputRef}
                         onChange={handleImageUpload}
                     />
