@@ -9,7 +9,7 @@ import { Message, useWorkspaceData } from '@/context/WorkspaceDataContext';
 import Lookup from '@/data/Lookup';
 import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } from '@/lib/queries';
 import { StreamingMessageParser } from '@/lib/stream-parser';
-import { allowedHTMLElements, rehypePlugins, remarkPlugins } from '@/lib/utils';
+import { allowedHTMLElements, rehypePlugins, remarkPlugins, stripIndents } from '@/lib/utils';
 import JSZip from 'jszip';
 import { ArrowRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -29,6 +29,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
+import CustomMarkdown from './_components/CustomMarkdown';
 
 type ImageItem = {
     id: string;
@@ -233,14 +234,12 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             const text = decoder.decode(value, { stream: true });
             buffer += text;
             const parsedText = messageParser.parse(messageId, buffer);
-            let cleanedText = parsedText.replace(/```[\w]*\n?|```/g, '');
-            if (cleanedText.startsWith('html'))
-                cleanedText = cleanedText.slice(5)
-            if (cleanedText.length > 0 && cleanedText.slice(-1) === " ") {
-                msg += cleanedText.trim() + " ";
-            } else {
-                msg += cleanedText.trim();
-            }
+            // if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
+            //     msg += parsedText.trim() + " ";
+            // } else {
+            //     msg += parsedText.trim();
+            // }
+            msg += stripIndents(parsedText.trim());
             onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
             newMessages.pop();
             newMessages.push({ role: 'assistant', content: msg });
@@ -296,9 +295,9 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                 <div key={index} className='w-full flex flex-col'>
                                     {message.url && message.url != "" && <Link href={message.url} target="_blank" rel='noopener noreferrer' className="text-sm text-right text-blue-400">@{message.url}</Link>}
                                     {message.photoUrls && message.photoUrls.length > 0 &&
-                                        <div className='flex gap-2 items-start rounded-lg p-2 mb-2 h-24 w-24'>
+                                        <div className='flex gap-1 items-start rounded-lg ml-auto mb-1'>
                                             {message.photoUrls.map((photoUrl: string, index: number) => (
-                                                <img key={index} className='rounded-lg' src={photoUrl} alt="scraped image" height={100} width={100} />
+                                                <Image key={index} className='rounded-lg max-h-24 max-w-24 w-full h-full object-contain ' src={photoUrl} alt="scraped image" height={100} width={100} />
                                             ))}
                                         </div>}
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
@@ -312,16 +311,14 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                         </div>
                                     </div>
                                 </div>))}
-                            {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2'>
+                            {/* {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2'>
                                 <div className="whitespace-pre-wrap">
                                     <ReactMarkdown
                                         allowedElements={allowedHTMLElements}
                                         className={styles.MarkdownContent}
-                                        remarkPlugins={remarkPlugins(false)}
-                                        rehypePlugins={rehypePlugins(true)}
                                     >{newAiMessage}</ReactMarkdown>
                                 </div>
-                            </div>}
+                            </div>} */}
                             {action != "" && <button className='flex items-center gap-2 rounded-full p-3 mb-2 bg-secondary'>
                                 {action}<Loader2 className='h-4 w-4 animate-spin' />
                             </button>}

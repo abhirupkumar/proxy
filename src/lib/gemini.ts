@@ -1,4 +1,7 @@
 import { GoogleGenerativeAI, SchemaType, Tool } from "@google/generative-ai";
+import { GoogleGenAI } from '@google/genai';
+
+export const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_API_KEY! });
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 

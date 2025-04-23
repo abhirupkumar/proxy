@@ -277,7 +277,7 @@ export async function uploadImage(formData: FormData): Promise<UploadResponse> {
         const result = await imagekit.upload({
             file: buffer,
             fileName: fileName,
-            folder: '/proxy-studio/', // Optional folder path inside your ImageKit media library
+            folder: '/proxy-studio/',
             useUniqueFileName: true,
         });
 
@@ -325,8 +325,13 @@ export async function deleteImage(fileId: string): Promise<{
         await imagekit.deleteFile(extractedFileId);
 
         return { success: true };
-    } catch (error) {
-        console.error('Error deleting file from ImageKit:', error);
+    } catch (error: any) {
+        const trimStr = (str: string) => {
+            if (str.length > 200)
+                return str.substring(0, 200) + "...";
+            return str;
+        }
+        console.log('Error deleting file from ImageKit:', trimStr((error as Error).message));
         return {
             success: false,
             error: error instanceof Error ? error.message : 'Unknown error occurred'
