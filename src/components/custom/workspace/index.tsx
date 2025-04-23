@@ -30,6 +30,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import CustomMarkdown from './_components/CustomMarkdown';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { DialogTitle } from '@radix-ui/react-dialog';
 
 type ImageItem = {
     id: string;
@@ -297,7 +299,15 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                     {message.photoUrls && message.photoUrls.length > 0 &&
                                         <div className='flex gap-1 items-start rounded-lg ml-auto mb-1'>
                                             {message.photoUrls.map((photoUrl: string, index: number) => (
-                                                <Image key={index} className='rounded-lg max-h-24 max-w-24 w-full h-full object-contain ' src={photoUrl} alt="scraped image" height={100} width={100} />
+                                                <Dialog key={index}>
+                                                    <DialogTrigger asChild>
+                                                        <Image className='rounded-lg max-h-24 max-w-24 w-full h-full cursor-pointer object-contain ' src={photoUrl} alt="image" height={100} width={100} />
+                                                    </DialogTrigger>
+                                                    <DialogContent className="max-w-[80vw] max-h-[80vh] h-fit w-full">
+                                                        <DialogTitle></DialogTitle>
+                                                        <img className='rounded-lg w-full h-full object-contain' src={photoUrl} alt="image" height={1000} width={1000} />
+                                                    </DialogContent>
+                                                </Dialog>
                                             ))}
                                         </div>}
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
