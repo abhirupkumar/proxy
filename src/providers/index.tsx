@@ -10,6 +10,7 @@ import AppSidebar from '@/components/custom/app-sidebar'
 import dynamic from 'next/dynamic'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
+import { PostHogProvider } from './PostHogProvider'
 const NextThemesProvider = dynamic(
     () => import('next-themes').then((e) => e.ThemeProvider),
     {
@@ -30,10 +31,12 @@ export function Provider({
             <TooltipProvider>
                 <WorkspaceDataProvider>
                     <Header />
-                    <SidebarProvider defaultOpen={false}>
-                        <AppSidebar />
-                        {children}
-                    </SidebarProvider>
+                    <PostHogProvider>
+                        <SidebarProvider defaultOpen={false}>
+                            <AppSidebar />
+                            {children}
+                        </SidebarProvider>
+                    </PostHogProvider>
                 </WorkspaceDataProvider>
             </TooltipProvider>
         </NextThemesProvider>

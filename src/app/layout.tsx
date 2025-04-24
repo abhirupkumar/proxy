@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { DM_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers";
+import { PostHogProvider } from "@/providers/PostHogProvider";
 import { constructMetadata } from "@/lib/utils";
 
 export const metadata: Metadata = constructMetadata()
@@ -13,19 +14,11 @@ const font = DM_Sans({
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${font.className} overflow-hidden`}
-      >
-        <Provider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem
-          disableTransitionOnChange>
+      <body className={`${font.className} overflow-hidden`}>
+        <Provider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
         </Provider>
       </body>
