@@ -19,7 +19,7 @@ export async function generateMetadata(
     const workspace = await getWorkspace(id);
 
     return {
-        title: (workspace?.title ?? "") + " - Proxy",
+        title: (workspace?.title ?? "New Chat") + " - Proxy",
     }
 }
 

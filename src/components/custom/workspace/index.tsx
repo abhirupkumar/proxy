@@ -105,7 +105,6 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         document.body.removeChild(link);
     };
 
-
     const messageParser = new StreamingMessageParser({
         callbacks: {
             onRegexOpen: (data) => {
@@ -122,7 +121,17 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             onActionOpen: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
+                    let newFileContent = data.action.content;
+                    if (newFileContent.endsWith("```")) {
+                        newFileContent = newFileContent.slice(0, -3);
+                    }
                     setAction(`Editing ${filePath}`)
+                    newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
+
+                        return updatedFiles;
+                    });
                 }
             },
             onActionClose: (data) => {
@@ -141,6 +150,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                     });
                     handleFileSelect(filePath);
                     setIsFilesUpdated(true);
+                    setAction("");
                 }
             }
 
@@ -246,12 +256,11 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             const text = decoder.decode(value, { stream: true });
             buffer += text;
             const parsedText = messageParser.parse(messageId, buffer);
-            // if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
-            //     msg += parsedText.trim() + " ";
-            // } else {
-            //     msg += parsedText.trim();
-            // }
-            msg += stripIndents(parsedText.trim());
+            if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
+                msg += stripIndents(parsedText.trim() + " ");
+            } else {
+                msg += stripIndents(parsedText.trim());
+            }
             onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
             newMessages.pop();
             newMessages.push({ role: 'assistant', content: msg });
