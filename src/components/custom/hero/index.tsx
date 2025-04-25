@@ -50,7 +50,7 @@ const Hero = ({ user }: { user: any }) => {
                 {Lookup?.SUGGSTIONS.map((suggestion, index) => (
                     <button
                         key={index}
-                        onClick={() => onGenerate(suggestion)}
+                        onClick={() => setUserInput(suggestion)}
                         className='p-1 px-2 border rounded-full text-sm'>{suggestion}</button>
                 ))}
             </div>

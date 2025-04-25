@@ -1,6 +1,6 @@
 import { GlowingEffect } from '@/components/ui/glowing-effect';
 import Lookup from '@/data/Lookup';
-import { ArrowRight, CrossIcon, Image, ImageIcon, ImagePlusIcon, Link, XIcon } from 'lucide-react';
+import { ArrowRight, CrossIcon, Image, ImageIcon, ImagePlusIcon, Link, Link2, XIcon } from 'lucide-react';
 import React, { Dispatch, SetStateAction, useRef, useState } from 'react'
 import ButtonLoader from '../button-loader';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -221,12 +221,11 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
             {!disabled && <div className='flex gap-x-2 items-center'>
                 <label
                     htmlFor="dropzone-file"
-                    className="flex flex-col items-center justify-center cursor-pointer"
+                    className="flex items-center justify-center cursor-pointer"
                 >
                     <div title='Upload Image' className="flex items-center justify-center">
                         <ImagePlusIcon className='!h-4 mr-0' />
                     </div>
-                    {/*  maximum 5 files can be added */}
                     <Input
                         id="dropzone-file"
                         type="file"
@@ -237,9 +236,11 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                         ref={fileInputRef}
                         onChange={handleImageUpload}
                     />
+                    <p className='text-sm'>Attach</p>
                 </label>
-                <button className='flex items-center' title='Add Link' onClick={() => setOpen(!open)}>
-                    <Link className='!h-4' />
+                <button className='flex items-center justify-center' title='Add Link' onClick={() => setOpen(!open)}>
+                    <Link2 className='!h-4' />
+                    <p className='text-sm'>Clone</p>
                 </button>
                 {open && <Input className='text-sm w-fit' type="url" placeholder="https://example.com" value={scrapeUrl} onKeyDown={(e) => {
                     if (e.key == 'Enter' && scrapeUrl != null && scrapeUrl != "")

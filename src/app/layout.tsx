@@ -10,6 +10,7 @@ export const metadata: Metadata = constructMetadata()
 const font = DM_Sans({
   weight: "400",
   subsets: ['latin'],
+  variable: "--font-dm-sans",
 });
 
 export default function RootLayout({
@@ -17,7 +18,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${font.className} overflow-hidden`}>
+      <body className={`${font.className} ${font.variable} overflow-hidden antialiased`}>
         <Provider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           {children}
         </Provider>
