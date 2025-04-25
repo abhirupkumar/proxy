@@ -297,12 +297,16 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         return str;
     }
 
-    const changePanel = (panel: "code" | "chat") => {
-        if (panel == "code") {
-            setPanels({ ...panels, code: !panels.code });
+    const changePanel = (panel: string) => {
+        if (panels.chat && panels.code) {
+            if (panel == "chat") {
+                setPanels({ chat: false, code: true });
+            } else if (panel == "code") {
+                setPanels({ chat: true, code: false });
+            }
         }
-        else if (panel == "chat") {
-            setPanels({ ...panels, chat: !panels.chat });
+        else {
+            setPanels({ chat: true, code: true });
         }
     }
 
