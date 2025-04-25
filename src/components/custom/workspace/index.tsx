@@ -11,7 +11,7 @@ import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } fr
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins, stripIndents } from '@/lib/utils';
 import JSZip from 'jszip';
-import { ArrowRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
+import { ArrowRight, ChevronRight, ChevronsLeft, ChevronsRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -62,6 +62,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const { messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast()
+    const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
 
     useEffect(() => {
         if (scrollContainerRef.current) {
@@ -296,19 +297,29 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         return str;
     }
 
+    const changePanel = (panel: "code" | "chat") => {
+        if (panel == "code") {
+            setPanels({ ...panels, code: !panels.code });
+        }
+        else if (panel == "chat") {
+            setPanels({ ...panels, chat: !panels.chat });
+        }
+    }
+
     return (
         <div className='w-full text-sm' suppressHydrationWarning>
             <ResizablePanelGroup
                 direction="horizontal"
                 className="max-w-full border-t md:min-w-[450px]"
             >
-                <ResizablePanel defaultSize={37} minSize={25}>
-                    <div className='relative h-[100vh] flex flex-col p-3 items-center'>
+                {panels.chat && <ResizablePanel defaultSize={37} minSize={25}>
+                    <div className='relative h-[100vh] flex flex-col p-3 pt-2 items-center'>
                         <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
                             <h2>{title != "" ? title : "New Chat"}</h2>
                             <span className='flex' suppressHydrationWarning>
                                 <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
                                 {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
+                                <Button title='slide' onClick={() => changePanel("chat")} size='icon' variant={'link'} className=''><ChevronsLeft /></Button>
                             </span>
                         </div>
                         <div ref={scrollContainerRef} className='flex-1 overflow-y-scroll no-scrollbar max-w-[720px]'>
@@ -357,18 +368,19 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                         </div>
                         <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
                     </div>
-                </ResizablePanel>
-                {isLoaded && isSignedIn && <>
+                </ResizablePanel>}
+                {isLoaded && isSignedIn && panels.code && <>
                     <ResizableHandle />
                     <ResizablePanel defaultSize={63} minSize={25}>
                         <div className='flex flex-col h-full w-auto'>
                             <Tabs defaultValue="code" className="h-full flex flex-col">
-                                <div className="flex border-b items-center justify-between">
+                                <div className="flex border-b items-center">
+                                    <Button title='slide' size='icon' variant={'link'} className='' onClick={() => changePanel("code")}><ChevronsRight /></Button>
                                     <TabsList className="my-2 mx-4 rounded-full">
                                         <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
                                         <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                     </TabsList>
-                                    <div className='flex' suppressHydrationWarning>
+                                    <div className='flex ml-auto' suppressHydrationWarning>
                                         {userId == dbUser.clerkId && <PrivateButton workspaceId={workspace.id} />}
                                         {userId == dbUser.clerkId && (!loading ? <GithubConnectButton
                                             workspaceId={workspace.id}
