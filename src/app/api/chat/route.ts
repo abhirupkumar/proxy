@@ -36,10 +36,6 @@ const imageToBase64 = async (url: string): Promise<string> => {
 
 export async function POST(req: NextRequest) {
     try {
-        const user = await currentUser();
-        if (!user)
-            return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
-
         const { workspaceId } = await req.json() as { workspaceId: string };
         const workspace = await getWorkspace(workspaceId);
         if (!workspace) return NextResponse.json({ error: "Workspace cannot be found." }, { status: 402 });

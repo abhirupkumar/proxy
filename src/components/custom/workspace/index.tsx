@@ -253,19 +253,24 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
-
-            const text = decoder.decode(value, { stream: true });
-            buffer += text;
-            const parsedText = messageParser.parse(messageId, buffer);
-            if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
-                msg += stripIndents(parsedText.trim() + " ");
-            } else {
-                msg += stripIndents(parsedText.trim());
+            try {
+                const text = decoder.decode(value, { stream: true });
+                buffer += text;
+                console.log("Buffer: ", buffer);
+                const parsedText = messageParser.parse(messageId, buffer);
+                if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
+                    msg += stripIndents(parsedText.trim() + " ");
+                } else {
+                    msg += stripIndents(parsedText.trim());
+                }
+                onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
+                newMessages.pop();
+                newMessages.push({ role: 'assistant', content: msg });
+                setMessages(newMessages);
             }
-            onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
-            newMessages.pop();
-            newMessages.push({ role: 'assistant', content: msg });
-            setMessages(newMessages);
+            catch (error) {
+                console.error("Error parsing message: ", error);
+            }
         }
         // router.refresh();
         setNewAiMessage("");

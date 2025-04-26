@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { DM_Sans, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import { Provider } from "@/providers";
-import { PostHogProvider } from "@/providers/PostHogProvider";
 import { constructMetadata } from "@/lib/utils";
 
 export const metadata: Metadata = constructMetadata()
