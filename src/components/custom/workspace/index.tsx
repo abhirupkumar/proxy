@@ -32,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import CustomMarkdown from './_components/CustomMarkdown';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
+import { getIndexedDB } from '@/lib/indexed-db';
 
 type ImageItem = {
     id: string;
@@ -40,6 +41,8 @@ type ImageItem = {
     status: 'uploading' | 'success' | 'error';
     error?: string;
 };
+
+let saveTimeout: NodeJS.Timeout | null = null;
 
 const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
@@ -190,6 +193,31 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         setLoading(false);
     }
 
+    function debouncedSaveToIndexedDB(messageId: string, workspaceId: string, content: string) {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            const db = await getIndexedDB();
+            await db.put('messages', {
+                id: messageId,
+                role: 'assistant',
+                content: content,
+                workspaceId,
+                createdAt: Date.now(),
+            });
+        }, 3000);
+    }
+
+    function debouncedSaveToServer(messageId: string, workspaceId: string, content: string) {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(async () => {
+            try {
+                await onMessagesUpdate(messageId, 'assistant', content, workspace.id, "");
+            } catch (err) {
+                console.error('Failed saving to server:', err);
+            }
+        }, 3000);
+    }
+
     const init = async () => {
         setLoading(true);
         let msg = "";
@@ -238,6 +266,8 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             return;
         }
 
+        const indexedDB = await getIndexedDB();
+
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
@@ -254,16 +284,30 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                 } else {
                     msg += stripIndents(parsedText.trim());
                 }
-                onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
+                // onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
                 newMessages.pop();
                 newMessages.push({ role: 'assistant', content: msg });
                 setMessages(newMessages);
+                // save partial to IndexedDB
+                debouncedSaveToIndexedDB(messageId, workspace.id, msg);
+
+                // save partial to server (optional, for recovery)
+                debouncedSaveToServer(messageId, workspace.id, msg);
             }
             catch (error) {
                 console.error("Error parsing message: ", error);
             }
         }
         // router.refresh();
+        await indexedDB.put('messages', {
+            id: messageId,
+            role: 'assistant',
+            content: msg,
+            workspaceId: workspace.id,
+            createdAt: Date.now(),
+        });
+        await onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
+        await indexedDB.delete('messages', messageId);
         setNewAiMessage("");
         setLoading(false);
     }
