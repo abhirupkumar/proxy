@@ -204,17 +204,17 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
 
         if (latestUrl != "") {
             setAction("Scraping the Url");
-            const scrapedResult = await fetch("/api/scrape", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    targetUrl: latestUrl,
-                    text: messages[messages.length - 1].content,
-                    workspaceId: workspace.id,
-                }),
-            });
-            // const scrapedData = await scrapeFromUrl(latestUrl, messages[messages.length - 1].content, workspace.id);
-            const scrapedData = await scrapedResult.json();
+            // const scrapedResult = await fetch("/api/scrape", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({
+            //         targetUrl: latestUrl,
+            //         text: messages[messages.length - 1].content,
+            //         workspaceId: workspace.id,
+            //     }),
+            // });
+            const scrapedData = await scrapeFromUrl(latestUrl, messages[messages.length - 1].content, workspace.id);
+            // const scrapedData = await scrapedResult.json();
             if (scrapedData.error) {
                 msg += 'Couldn\'t scrape the provided url.\n';
             }
