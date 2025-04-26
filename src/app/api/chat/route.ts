@@ -35,6 +35,13 @@ const imageToBase64 = async (url: string): Promise<string> => {
 }
 
 export async function POST(req: NextRequest) {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
+    req.signal?.addEventListener("abort", () => {
+        console.log('Request aborted by client.');
+        abortController.abort();
+    });
     try {
         const { workspaceId } = await req.json() as { workspaceId: string };
         const workspace = await getWorkspace(workspaceId);

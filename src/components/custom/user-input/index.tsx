@@ -25,7 +25,7 @@ type ImageItem = {
 };
 
 
-const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
+const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
     const [open, setOpen] = useState<boolean>(false);
     const { isLoaded, isSignedIn } = useAuth();
@@ -136,6 +136,13 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
         }
     };
 
+    const handleAbort = () => {
+        if (controller) {
+            controller.abort();
+            setLoading(false);
+        }
+    }
+
     return (
         <div className='px-5 py-3 border items-center rounded-xl max-w-3xl w-full mt-3 bg-secondary relative'>
             <GlowingEffect
@@ -211,7 +218,7 @@ const UserInput = ({ disabled, onGenerate, loading, setLoading, userInput, setUs
                 {!loading && userInput && <ArrowRight
                     onClick={() => onGenerate(userInput)}
                     className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
-                {loading && <ButtonLoader />}
+                {loading && <ButtonLoader onClick={handleAbort} />}
                 {isLoaded && !isSignedIn && pathname != '/' && <SignInButton forceRedirectUrl={window.location.href}>
                     <Button >
                         Log In

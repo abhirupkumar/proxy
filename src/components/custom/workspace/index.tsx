@@ -64,6 +64,8 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const { toast } = useToast()
     const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
 
+    const controller = new AbortController();
+
     useEffect(() => {
         if (scrollContainerRef.current) {
             const scrollContainer = scrollContainerRef.current;
@@ -122,17 +124,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             onActionOpen: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
-                    let newFileContent = data.action.content;
-                    if (newFileContent.endsWith("```")) {
-                        newFileContent = newFileContent.slice(0, -3);
-                    }
                     setAction(`Editing ${filePath}`)
-                    newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
-                    setFiles((prevFiles) => {
-                        const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
-
-                        return updatedFiles;
-                    });
                 }
             },
             onActionClose: (data) => {
@@ -237,7 +229,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             body: JSON.stringify({
                 workspaceId: workspace.id
             }),
-            // signal: controller.signal
+            signal: controller.signal
         });
         messageParser.reset();
 
@@ -256,7 +248,6 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
             try {
                 const text = decoder.decode(value, { stream: true });
                 buffer += text;
-                console.log("Buffer: ", buffer);
                 const parsedText = messageParser.parse(messageId, buffer);
                 if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
                     msg += stripIndents(parsedText.trim() + " ");
@@ -375,7 +366,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <UserInput disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
+                        <UserInput controller={controller} disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
                     </div>
                 </ResizablePanel>}
                 {isLoaded && isSignedIn && panels.code && <>
