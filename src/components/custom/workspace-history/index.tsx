@@ -48,8 +48,8 @@ const WorkspaceHistory = () => {
             {workspaceList && workspaceList?.map((workspace: any, index: number) => {
                 return (
                     <SidebarMenuItem key={index} className='flex w-full items-center'>
-                        <SidebarMenuButton title={workspace.title ?? workspace.Messages[0].content} className='flex justify-between items-center w-full flex-1 group'>
-                            <span onClick={() => handleToggle(workspace.id)}>{truncate(workspace.title ?? workspace.Messages[0].content)}</span>
+                        <SidebarMenuButton title={workspace.title ?? "New Chat"} className='flex justify-between items-center w-full flex-1 group'>
+                            <span onClick={() => handleToggle(workspace.id)}>{truncate(workspace.title ?? "New Chat")}</span>
                             <DeleteButton className="ml-auto cursor-pointer h-4 hidden group-hover:block absolute right-0" onClick={() => handleDelete(workspace.id)} />
                         </SidebarMenuButton>
                     </SidebarMenuItem>

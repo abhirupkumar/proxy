@@ -12,6 +12,8 @@ import { Button } from '@/components/ui/button';
 import { deleteImage, uploadImage } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from 'next-themes';
 
 const MAXIMUM_IMAGES = 4;
 
@@ -27,6 +29,7 @@ type ImageItem = {
 
 const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
+    const { resolvedTheme } = useTheme();
     const [open, setOpen] = useState<boolean>(false);
     const { isLoaded, isSignedIn } = useAuth();
     const pathname = usePathname();
@@ -192,6 +195,11 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                         </button>
                     </div>
                 ))}
+                {open && <Input className='text-sm w-fit' type="url" placeholder="https://example.com" value={scrapeUrl} onKeyDown={(e) => {
+                    if (e.key == 'Enter' && scrapeUrl != null && scrapeUrl != "")
+                        setOpen(false);
+                }} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScrapeUrl(e.target.value)} />}
+                {!open && <p className='text-sm w-fit'>{scrapeUrl}</p>}
             </div>
             <div className='flex gap-2'>
                 <textarea
@@ -241,19 +249,52 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                     />
                     <p className='text-sm'>Attach</p>
                 </label>
+
                 <button className='flex items-center justify-center' title='Add Link' onClick={() => setOpen(!open)}>
                     <Link2 className='!h-4' />
                     <p className='text-sm'>Clone</p>
                 </button>
-                {open && <Input className='text-sm w-fit' type="url" placeholder="https://example.com" value={scrapeUrl} onKeyDown={(e) => {
-                    if (e.key == 'Enter' && scrapeUrl != null && scrapeUrl != "")
-                        setOpen(false);
-                }} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScrapeUrl(e.target.value)} />}
-                {!open && <p className='text-sm w-fit'>{scrapeUrl}</p>}
-                {!loading && <ArrowRight
-                    onClick={() => userInput && onGenerate(userInput)}
-                    className={`h-8 w-8 p-2 rounded-full text-secondary ${userInput ? "bg-primary cursor-pointer" : "bg-primary/60"} -rotate-90 ml-auto`} />}
-                {loading && <ButtonLoader onClick={handleAbort} />}
+
+                <Select defaultValue='reactjs'>
+                    <SelectTrigger className="w-fit px-1">
+                        <SelectValue placeholder="Select a Template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectGroup>
+                            <SelectLabel>Templates</SelectLabel>
+                            <SelectItem value="reactjs">
+                                <span className='flex gap-x-1'>
+                                    <img className='w-[16px]' src="/react.svg" alt="react" />
+                                    <p>React.js</p>
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="nextjs">
+                                <span className='flex gap-x-1'>
+                                    {resolvedTheme == "dark" ? <img className='w-[16px]' src="/next-dark.svg" alt="next" /> : <img className='w-[16px]' src="/next-white.svg" alt="next" />}
+                                    <p>Next.js</p>
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="angular">
+                                <span className='flex gap-x-1'>
+                                    <img className='w-[16px]' src="/angular.svg" alt="angular" />
+                                    <p>Angular</p>
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="remix">
+                                <span className='flex gap-x-1'>
+                                    {resolvedTheme == "dark" ? <img className='w-[16px]' src="/remix-dark.svg" alt="remix" /> : <img className='w-[16px]' src="/remix-white.svg" alt="remix" />}
+                                    <p>Remix</p>
+                                </span>
+                            </SelectItem>
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+
+                <span className='ml-auto flex'>
+                    {!loading ? <ArrowRight
+                        onClick={() => userInput && onGenerate(userInput)}
+                        className={`h-8 w-8 p-2 rounded-full text-secondary ${userInput ? "bg-primary cursor-pointer" : "bg-primary/60"} -rotate-90`} /> : <ButtonLoader onClick={handleAbort} />}
+                </span>
             </div>}
         </div>
     )
