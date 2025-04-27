@@ -215,10 +215,6 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                     className="outline-none border-none bg-transparent w-full !min-h-6 !max-h-56 resize-none"
                 />
 
-                {!loading && userInput && <ArrowRight
-                    onClick={() => onGenerate(userInput)}
-                    className='w-10 h-10 p-2 rounded-md text-secondary bg-primary cursor-pointer' />}
-                {loading && <ButtonLoader onClick={handleAbort} />}
                 {isLoaded && !isSignedIn && pathname != '/' && <SignInButton forceRedirectUrl={window.location.href}>
                     <Button >
                         Log In
@@ -254,6 +250,10 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                         setOpen(false);
                 }} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setScrapeUrl(e.target.value)} />}
                 {!open && <p className='text-sm w-fit'>{scrapeUrl}</p>}
+                {!loading && <ArrowRight
+                    onClick={() => userInput && onGenerate(userInput)}
+                    className={`h-8 w-8 p-2 rounded-full text-secondary ${userInput ? "bg-primary cursor-pointer" : "bg-primary/60"} -rotate-90 ml-auto`} />}
+                {loading && <ButtonLoader onClick={handleAbort} />}
             </div>}
         </div>
     )

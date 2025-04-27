@@ -5,10 +5,12 @@ const ButtonLoader = ({ onClick }: { onClick?: () => void }) => {
     return (
         <button
             onClick={onClick}
-            className="w-10 h-10 flex p-2 rounded-md text-secondary bg-primary items-center"
+            className="flex p-2.5 rounded-full text-secondary bg-primary justify-center items-center"
             disabled={true}
         >
-            <Loader2 className='animate-spin h-5 w-5 cursor-pointer' />
+            <span
+                onClick={onClick}
+                className="bg-background h-[0.7rem] w-[0.7rem] cursor-pointer rounded-sm"></span>
         </button>
     )
 }
