@@ -58,3 +58,47 @@ export interface ShellAction extends BaseAction {
 export type ProxyAction = FileAction | ShellAction;
 
 export type ProxyActionData = ProxyAction | BaseAction;
+
+export interface VercelUser {
+    id: string;
+    username: string;
+    email: string;
+    name: string;
+    avatar?: string;
+}
+
+export interface VercelDeployment {
+    id: string;
+    url: string;
+    status: 'BUILDING' | 'ERROR' | 'READY' | 'CANCELED' | 'QUEUED';
+    createdAt: string;
+    meta?: Record<string, any>;
+}
+
+export interface VercelProject {
+    id: string;
+    name: string;
+    framework?: string;
+    url?: string;
+    latestDeployments?: VercelDeployment[];
+}
+
+export interface VercelStats {
+    projects: VercelProject[];
+    totalProjects: number;
+}
+
+export interface VercelConnection {
+    user: VercelUser | null;
+    token: string;
+    stats?: VercelStats;
+}
+
+export interface VercelDeploymentConfig {
+    name: string;
+    framework?: string;
+    buildCommand?: string;
+    installCommand?: string;
+    outputDirectory?: string;
+    environmentVariables?: Record<string, string>;
+}

@@ -274,18 +274,6 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                                     <p>Next.js</p>
                                 </span>
                             </SelectItem>
-                            <SelectItem value="angular">
-                                <span className='flex gap-x-1'>
-                                    <img className='w-[16px]' src="/angular.svg" alt="angular" />
-                                    <p>Angular</p>
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="remix">
-                                <span className='flex gap-x-1'>
-                                    {resolvedTheme == "dark" ? <img className='w-[16px]' src="/remix-dark.svg" alt="remix" /> : <img className='w-[16px]' src="/remix-white.svg" alt="remix" />}
-                                    <p>Remix</p>
-                                </span>
-                            </SelectItem>
                         </SelectGroup>
                     </SelectContent>
                 </Select>
