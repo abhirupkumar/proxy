@@ -1,0 +1,294 @@
+'use client';
+
+import { createVercelProject, deployToVercel, disconnectVercel, getVercelAuthUrl, getVercelProjects } from '@/lib/actions/vercel';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useToast } from "@/hooks/use-toast";
+
+// Define types
+export type VercelProject = {
+    id: string;
+    name: string;
+    accountId: string;
+    createdAt: number;
+    updatedAt: number;
+    framework?: string;
+    link?: {
+        productionBranch?: string;
+        type?: string;
+        org?: string;
+        repo?: string;
+    };
+    latestDeployments?: any[];
+};
+
+export type VercelUser = {
+    id: string;
+    name: string;
+    email: string;
+    username: string;
+};
+
+export type VercelState = {
+    isConnected: boolean;
+    isConnecting: boolean;
+    isFetchingStats: boolean;
+    user: VercelUser | null;
+    token: string | null;
+    stats: {
+        projects: VercelProject[];
+        totalProjects: number;
+    } | null;
+};
+
+type VercelContextType = {
+    vercelState: VercelState;
+    connectVercel: () => Promise<void>;
+    disconnectVercel: () => Promise<void>;
+    refreshVercelProjects: () => Promise<void>;
+    createProject: (workspaceId: string, projectData: any) => Promise<any>;
+    deployProject: (workspaceId: string, projectId: string, environmentVariables?: Record<string, string>) => Promise<any>;
+    isModalOpen: boolean;
+    setIsModalOpen: (value: boolean) => void;
+    selectedProject: VercelProject | null;
+    setSelectedProject: (project: VercelProject | null) => void;
+};
+
+const initialState: VercelState = {
+    isConnected: false,
+    isConnecting: false,
+    isFetchingStats: false,
+    user: null,
+    token: null,
+    stats: null,
+};
+
+const VercelContext = createContext<VercelContextType | undefined>(undefined);
+
+export function VercelProvider({ children }: { children: ReactNode }) {
+    const [vercelState, setVercelState] = useState<VercelState>(initialState);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<VercelProject | null>(null);
+    const { toast } = useToast();
+
+    // Initialize from localStorage
+    useEffect(() => {
+        const storedConnection = localStorage.getItem('vercel_connection');
+        if (storedConnection) {
+            try {
+                const parsedData = JSON.parse(storedConnection);
+                setVercelState({
+                    ...parsedData,
+                    isConnected: !!parsedData.token,
+                });
+
+                // If token exists, refresh stats
+                if (parsedData.token) {
+                    refreshVercelProjects();
+                }
+            } catch (error) {
+                console.error('Failed to parse stored Vercel connection', error);
+            }
+        }
+    }, []);
+
+    // Check URL for Vercel connection parameters
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const vercelConnected = searchParams.get('vercelConnected');
+        const vercelUser = searchParams.get('vercelUser');
+
+        if (vercelConnected === 'true' && vercelUser) {
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            // Set connected state and fetch projects
+            setVercelState(prev => ({
+                ...prev,
+                isConnected: true,
+                user: {
+                    id: '',
+                    name: vercelUser,
+                    email: '',
+                    username: vercelUser
+                }
+            }));
+
+            toast({
+                title: "Success",
+                description: `Connected to Vercel as ${vercelUser}`,
+            });
+
+            // Fetch projects after connection
+            refreshVercelProjects();
+        }
+
+        const error = searchParams.get('error');
+        if (error) {
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+
+            toast({
+                title: "Error",
+                description: decodeURIComponent(error),
+                variant: "destructive",
+            });
+        }
+    }, []);
+
+    const updateVercelState = (updates: Partial<VercelState>) => {
+        setVercelState(prev => {
+            const newState = { ...prev, ...updates };
+
+            // Persist to localStorage if token changes
+            if ('token' in updates || 'user' in updates) {
+                localStorage.setItem('vercel_connection', JSON.stringify(newState));
+            }
+
+            return newState;
+        });
+    };
+
+    const connectVercel = async () => {
+        try {
+            updateVercelState({ isConnecting: true });
+
+            // Get auth URL using server action
+            const { url } = await getVercelAuthUrl();
+
+            if (url) {
+                window.location.href = url;
+            } else {
+                throw new Error('Failed to get Vercel authorization URL');
+            }
+        } catch (error) {
+            console.error('Vercel connection error:', error);
+            toast({
+                title: "Error",
+                description: 'Failed to connect to Vercel',
+                variant: "destructive",
+            });
+            updateVercelState({ isConnecting: false });
+        }
+    };
+
+    const handleDisconnect = async () => {
+        try {
+            // Call server action to remove token from user record
+            await disconnectVercel();
+
+            // Clear local state
+            updateVercelState({
+                token: null,
+                user: null,
+                stats: null,
+                isConnected: false
+            });
+
+            localStorage.removeItem('vercel_connection');
+            toast({
+                title: "Success",
+                description: 'Disconnected from Vercel',
+            });
+        } catch (error) {
+            console.error('Failed to disconnect from Vercel', error);
+            toast({
+                title: "Error",
+                description: 'Failed to disconnect from Vercel',
+                variant: "destructive",
+            });
+        }
+    };
+
+    const refreshVercelProjects = async () => {
+        try {
+            updateVercelState({ isFetchingStats: true });
+
+            const { projects } = await getVercelProjects();
+
+            updateVercelState({
+                isFetchingStats: false,
+                stats: {
+                    projects: projects || [],
+                    totalProjects: projects?.length || 0,
+                },
+            });
+        } catch (error) {
+            console.error('Vercel API Error:', error);
+            toast({
+                title: "Error",
+                description: 'Failed to fetch Vercel statistics',
+                variant: "destructive",
+            });
+            updateVercelState({ isFetchingStats: false });
+        }
+    };
+
+    const createProject = async (workspaceId: string, projectData: any) => {
+        try {
+            const result = await createVercelProject(workspaceId, projectData);
+            toast({
+                title: "Success",
+                description: 'Project created successfully',
+            });
+
+            // Refresh projects list
+            refreshVercelProjects();
+
+            return result;
+        } catch (error) {
+            console.error('Failed to create Vercel project:', error);
+            toast({
+                title: "Error",
+                description: `Failed to create project: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                variant: "destructive",
+            });
+            throw error;
+        }
+    };
+
+    const deployProject = async (workspaceId: string, projectId: string, environmentVariables?: Record<string, string>) => {
+        try {
+            const result = await deployToVercel(workspaceId, projectId, environmentVariables);
+            toast({
+                title: "Success",
+                description: `Deployment initiated successfully`,
+            });
+            return result;
+        } catch (error) {
+            console.error('Deployment error:', error);
+            toast({
+                title: "Error",
+                description: `Deployment Failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                variant: "destructive",
+            });
+            throw error;
+        }
+    };
+
+    return (
+        <VercelContext.Provider
+            value={{
+                vercelState,
+                connectVercel,
+                disconnectVercel: handleDisconnect,
+                refreshVercelProjects,
+                createProject,
+                deployProject,
+                isModalOpen,
+                setIsModalOpen,
+                selectedProject,
+                setSelectedProject,
+            }}
+        >
+            {children}
+        </VercelContext.Provider>
+    );
+}
+
+export function useVercel() {
+    const context = useContext(VercelContext);
+    if (context === undefined) {
+        throw new Error('useVercel must be used within a VercelProvider');
+    }
+    return context;
+}

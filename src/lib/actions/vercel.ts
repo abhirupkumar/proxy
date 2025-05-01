@@ -1,431 +1,400 @@
 'use server';
 
-import { currentUser } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+import { currentUser } from '@clerk/nextjs/server';
 import { db } from '../db';
-import { VercelDeploymentConfig } from '../types';
+import { extractEnvVariables } from '../utils';
 
-export async function saveVercelToken(token: string) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
+// Type definitions
+type VercelProjectCreateParams = {
+    name: string;
+    framework?: string;
+    buildCommand?: string;
+    installCommand?: string;
+    outputDirectory?: string;
+    environmentVariables?: Record<string, string>;
+};
+
+export async function getVercelAuthUrl() {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    const clientId = process.env.VERCEL_CLIENT_ID;
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/vercel/callback`;
+
+    if (!clientId) throw new Error('Vercel client ID not configured');
+
+    // Generate a random state for CSRF protection
+    const state = Math.random().toString(36).substring(2);
+
+    // Store state in session to verify callback
+    // This should be properly stored in a secure way in production
+    await db.user.update({
+        where: { clerkId: userId },
+        data: {
+            // Using a temporary field to store state
+            // In production, use a proper session store
+            githubToken: state, // Temporarily use this field to store vercel state
         }
+    });
 
-        // Verify token by making a test API call
-        const response = await fetch('https://api.vercel.com/v2/user', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
+    const scope = 'user read write';
 
-        if (!response.ok) {
-            throw new Error('Invalid Vercel token');
-        }
-
-        // Get user info from response
-        const userData = await response.json();
-
-        // Find user by clerk ID
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-        });
-
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        // Update user with Vercel token
-        await db.user.update({
-            where: { id: user.id },
-            data: { vercelToken: token },
-        });
-
-        revalidatePath('/settings');
-
-        return { success: true, user: userData };
-    } catch (error) {
-        console.error('Error saving Vercel token:', error);
-        return { success: false, error: (error as Error).message };
-    }
+    return {
+        url: `https://vercel.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}`
+    };
 }
 
-export async function getUserVercelToken() {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
-        }
+export async function handleVercelCallback(code: string, state: string) {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
 
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { vercelToken: true },
-        });
+    // Verify state to prevent CSRF
+    const user = await db.user.findUnique({
+        where: { clerkId: userId }
+    });
 
-        if (!user || !user.vercelToken) {
-            return { success: false, error: 'Vercel token not found' };
-        }
-
-        return { success: true, token: user.vercelToken };
-    } catch (error) {
-        console.error('Error getting Vercel token:', error);
-        return { success: false, error: (error as Error).message };
+    if (!user || user.githubToken !== state) {
+        throw new Error('Invalid state parameter');
     }
+
+    // Exchange code for access token
+    const clientId = process.env.VERCEL_CLIENT_ID;
+    const clientSecret = process.env.VERCEL_CLIENT_SECRET;
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/vercel/callback`;
+
+    if (!clientId || !clientSecret) {
+        throw new Error('Vercel client credentials not configured');
+    }
+
+    const response = await fetch('https://api.vercel.com/v2/oauth/access_token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+            client_id: clientId,
+            client_secret: clientSecret,
+            code,
+            redirect_uri: redirectUri,
+            grant_type: 'authorization_code'
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to get access token: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const accessToken = data.access_token;
+
+    // Get user info
+    const userResponse = await fetch('https://api.vercel.com/v2/user', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (!userResponse.ok) {
+        throw new Error(`Failed to get user info: ${userResponse.status}`);
+    }
+
+    const userData = await userResponse.json();
+
+    // Store token in database
+    await db.user.update({
+        where: { clerkId: userId },
+        data: {
+            vercelToken: accessToken,
+            // Clear the temporary state
+            githubToken: null,
+        }
+    });
+
+    // Return user info and token
+    return {
+        user: userData.user,
+        token: accessToken
+    };
 }
 
-export async function removeVercelToken() {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
+export async function disconnectVercel() {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    await db.user.update({
+        where: { clerkId: userId },
+        data: {
+            vercelToken: null
         }
+    });
 
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-        });
-
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        // Update user with Vercel token
-        await db.user.update({
-            where: { id: user.id },
-            data: { vercelToken: null },
-        });
-
-        revalidatePath('/settings');
-
-        return { success: true };
-    } catch (error) {
-        console.error('Error removing Vercel token:', error);
-        return { success: false, error: (error as Error).message };
-    }
+    return { success: true };
 }
 
-export async function createVercelProject(workspaceId: string, config: VercelDeploymentConfig) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
+export async function getVercelProjects() {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    const user = await db.user.findUnique({
+        where: { clerkId: userId }
+    });
+
+    if (!user?.vercelToken) {
+        throw new Error('Not connected to Vercel');
+    }
+
+    const response = await fetch('https://api.vercel.com/v9/projects', {
+        headers: {
+            Authorization: `Bearer ${user.vercelToken}`,
+            'Content-Type': 'application/json'
         }
+    });
 
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { id: true, vercelToken: true },
-        });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch projects: ${response.status}`);
+    }
 
-        if (!user || !user.vercelToken) {
-            throw new Error('Vercel token not found');
+    const data = await response.json();
+
+    // Fetch latest deployment for each project
+    const projectsWithDeployments = await Promise.all(
+        (data.projects || []).map(async (project: any) => {
+            try {
+                const deploymentsResponse = await fetch(
+                    `https://api.vercel.com/v6/deployments?projectId=${project.id}&limit=1`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${user.vercelToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                );
+
+                if (deploymentsResponse.ok) {
+                    const deploymentsData = await deploymentsResponse.json();
+                    return {
+                        ...project,
+                        latestDeployments: deploymentsData.deployments || []
+                    };
+                }
+
+                return project;
+            } catch (error) {
+                console.error(`Error fetching deployments for project ${project.id}:`, error);
+                return project;
+            }
+        })
+    );
+
+    return { projects: projectsWithDeployments };
+}
+
+export async function createVercelProject(
+    workspaceId: string,
+    projectParams: VercelProjectCreateParams
+) {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: {
+            workspaces: {
+                where: { id: workspaceId }
+            }
         }
+    });
 
-        const workspace = await db.workspace.findUnique({
-            where: { id: workspaceId, userId: user.id },
-            include: { githubRepo: true },
-        });
+    if (!user?.vercelToken) {
+        throw new Error('Not connected to Vercel');
+    }
 
-        if (!workspace) {
-            throw new Error('Workspace not found');
+    if (user.workspaces.length === 0) {
+        throw new Error('Workspace not found');
+    }
+
+    // Create project on Vercel
+    const response = await fetch('https://api.vercel.com/v9/projects', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${user.vercelToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: projectParams.name,
+            framework: projectParams.framework || null,
+            buildCommand: projectParams.buildCommand || null,
+            installCommand: projectParams.installCommand || null,
+            outputDirectory: projectParams.outputDirectory || null,
+            environmentVariables: Object.entries(projectParams.environmentVariables || {}).map(
+                ([key, value]) => ({
+                    key,
+                    value,
+                    target: ['production', 'preview', 'development']
+                })
+            )
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || `Failed to create project: ${response.status}`);
+    }
+
+    const projectData = await response.json();
+
+    // Save project in database
+    const vercelProject = await db.vercelProject.create({
+        data: {
+            projectId: projectData.id,
+            projectName: projectData.name,
+            projectUrl: projectData.link ? `https://${projectData.link}` : null,
+            teamId: projectData.teamId || null,
+            buildCommand: projectParams.buildCommand || null,
+            installCommand: projectParams.installCommand || null,
+            outputDirectory: projectParams.outputDirectory || null,
+            framework: projectParams.framework || null,
+            workspace: {
+                connect: { id: workspaceId }
+            }
         }
+    });
 
-        if (!workspace.githubRepo) {
-            throw new Error('GitHub repository not connected to this workspace');
+    revalidatePath(`/workspace/${workspaceId}`);
+
+    return { project: vercelProject };
+}
+
+export async function deployToVercel(
+    workspaceId: string,
+    projectId: string,
+    environmentVariables?: Record<string, string>
+) {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    const user = await db.user.findUnique({
+        where: { clerkId: userId },
+        include: {
+            workspaces: {
+                where: { id: workspaceId },
+                include: {
+                    vercelProject: true
+                }
+            }
         }
+    });
 
-        // Create project on Vercel
-        const projectResponse = await fetch('https://api.vercel.com/v9/projects', {
+    if (!user?.vercelToken) {
+        throw new Error('Not connected to Vercel');
+    }
+
+    if (user.workspaces.length === 0 || !user.workspaces[0].vercelProject) {
+        throw new Error('Workspace or Vercel project not found');
+    }
+
+    const workspace = user.workspaces[0];
+    const vercelProject = workspace.vercelProject;
+
+    if (vercelProject?.projectId !== projectId) {
+        throw new Error('Project ID does not match workspace configuration');
+    }
+
+    // Prepare files from workspace
+    const fileData = workspace.fileData as Record<string, { code: string }> | null;
+
+    if (!fileData) {
+        throw new Error('No files found in workspace');
+    }
+
+    // Extract environment variables from .env files
+    let envVars: Record<string, string> = {};
+
+    if (fileData['.env']?.code || fileData['.env.local']?.code) {
+        const envContent = fileData['.env']?.code || fileData['.env.local']?.code || '';
+        envVars = extractEnvVariables(envContent);
+    }
+
+    // Merge with provided environment variables
+    if (environmentVariables) {
+        envVars = { ...envVars, ...environmentVariables };
+    }
+
+    // Update environment variables in Vercel project if needed
+    if (Object.keys(envVars).length > 0) {
+        await fetch(`https://api.vercel.com/v9/projects/${projectId}/env`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${user.vercelToken}`,
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                name: config.name,
-                framework: config.framework || 'nextjs',
-                gitRepository: {
-                    type: 'github',
-                    repo: `${workspace.githubRepo.repoOwner}/${workspace.githubRepo.repoName}`,
-                },
-                buildCommand: config.buildCommand,
-                installCommand: config.installCommand,
-                outputDirectory: config.outputDirectory,
-                environmentVariables: config.environmentVariables,
-            }),
+            body: JSON.stringify(
+                Object.entries(envVars).map(([key, value]) => ({
+                    key,
+                    value,
+                    target: ['production', 'preview', 'development'],
+                    type: 'plain'
+                }))
+            )
         });
-
-        if (!projectResponse.ok) {
-            const errorData = await projectResponse.json();
-            throw new Error(`Failed to create Vercel project: ${JSON.stringify(errorData)}`);
-        }
-
-        const projectData = await projectResponse.json();
-
-        // Save project to database
-        const vercelProject = await db.vercelProject.create({
-            data: {
-                projectId: projectData.id,
-                projectName: projectData.name,
-                projectUrl: projectData.link,
-                framework: config.framework,
-                buildCommand: config.buildCommand,
-                installCommand: config.installCommand,
-                outputDirectory: config.outputDirectory,
-                workspaceId: workspace.id,
-            },
-        });
-
-        // Trigger deployment
-        const deployResponse = await fetch(`https://api.vercel.com/v13/deployments`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${user.vercelToken}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                projectId: projectData.id,
-                target: 'production',
-            }),
-        });
-
-        if (!deployResponse.ok) {
-            const errorData = await deployResponse.json();
-            console.error('Deployment failed:', errorData);
-            // We'll still consider the project creation successful even if deployment fails
-        } else {
-            const deployData = await deployResponse.json();
-
-            // Save deployment to database
-            await db.vercelDeployment.create({
-                data: {
-                    deploymentId: deployData.id,
-                    url: deployData.url,
-                    status: deployData.status,
-                    projectId: vercelProject.id,
-                    meta: deployData,
-                },
-            });
-        }
-
-        revalidatePath(`/workspaces/${workspaceId}`);
-        return { success: true, projectId: projectData.id };
-    } catch (error) {
-        console.error('Error creating Vercel project:', error);
-        return { success: false, error: (error as Error).message };
     }
-}
 
-export async function getWorkspaceVercelProject(workspaceId: string) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
+    // Format files for Vercel deployment
+    const files: Record<string, { file: { content: string } }> = {};
+
+    Object.entries(fileData).forEach(([path, { code }]) => {
+        // Skip .git files and env files
+        if (!path.startsWith('.git/') && path !== '.env' && path !== '.env.local') {
+            files[path] = { file: { content: code } };
         }
+    });
 
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { id: true },
-        });
+    // Create deployment
+    const deployResponse = await fetch(`https://api.vercel.com/v13/deployments`, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${user.vercelToken}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            name: vercelProject.projectName,
+            files,
+            projectId,
+            target: 'production'
+        })
+    });
 
-        if (!user) {
-            throw new Error('User not found');
-        }
-
-        const vercelProject = await db.vercelProject.findUnique({
-            where: { workspaceId },
-            include: {
-                deployments: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 5,
-                },
-            },
-        });
-
-        return { success: true, project: vercelProject };
-    } catch (error) {
-        console.error('Error fetching Vercel project:', error);
-        return { success: false, error: (error as Error).message };
+    if (!deployResponse.ok) {
+        const error = await deployResponse.json();
+        throw new Error(error.error?.message || `Deployment failed: ${deployResponse.status}`);
     }
-}
 
-export async function deployToVercel(workspaceId: string) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
-        }
+    const deploymentData = await deployResponse.json();
 
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { id: true, vercelToken: true },
-        });
-
-        if (!user || !user.vercelToken) {
-            throw new Error('Vercel token not found');
-        }
-
-        const vercelProject = await db.vercelProject.findUnique({
-            where: { workspaceId },
-        });
-
-        if (!vercelProject) {
-            throw new Error('Vercel project not found for this workspace');
-        }
-
-        // Trigger deployment
-        const deployResponse = await fetch(`https://api.vercel.com/v13/deployments`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${user.vercelToken}`,
-                'Content-Type': 'application/json',
+    // Save deployment info in database
+    const deployment = await db.vercelDeployment.create({
+        data: {
+            deploymentId: deploymentData.id,
+            url: deploymentData.url ? `https://${deploymentData.url}` : null,
+            status: deploymentData.readyState || 'QUEUED',
+            project: {
+                connect: { id: vercelProject.id }
             },
-            body: JSON.stringify({
-                projectId: vercelProject.projectId,
-                target: 'production',
-            }),
-        });
-
-        if (!deployResponse.ok) {
-            const errorData = await deployResponse.json();
-            throw new Error(`Failed to create deployment: ${JSON.stringify(errorData)}`);
+            meta: deploymentData
         }
+    });
 
-        const deployData = await deployResponse.json();
+    // Update last deployed timestamp
+    await db.vercelProject.update({
+        where: { id: vercelProject.id },
+        data: { lastDeployed: new Date() }
+    });
 
-        // Save deployment to database
-        const deployment = await db.vercelDeployment.create({
-            data: {
-                deploymentId: deployData.id,
-                url: deployData.url,
-                status: deployData.status,
-                projectId: vercelProject.id,
-                meta: deployData,
-            },
-        });
+    revalidatePath(`/workspace/${workspaceId}`);
 
-        // Update the lastDeployed timestamp
-        await db.vercelProject.update({
-            where: { id: vercelProject.id },
-            data: { lastDeployed: new Date() },
-        });
-
-        revalidatePath(`/workspaces/${workspaceId}`);
-        return { success: true, deploymentId: deployment.id };
-    } catch (error) {
-        console.error('Error deploying to Vercel:', error);
-        return { success: false, error: (error as Error).message };
-    }
-}
-
-export async function checkDeploymentStatus(deploymentId: string) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
-        }
-
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { vercelToken: true },
-        });
-
-        if (!user || !user.vercelToken) {
-            throw new Error('Vercel token not found');
-        }
-
-        const deployment = await db.vercelDeployment.findUnique({
-            where: { id: deploymentId },
-            include: { project: true },
-        });
-
-        if (!deployment) {
-            throw new Error('Deployment not found');
-        }
-
-        // Fetch the latest status from Vercel
-        const response = await fetch(`https://api.vercel.com/v13/deployments/${deployment.deploymentId}`, {
-            headers: {
-                Authorization: `Bearer ${user.vercelToken}`,
-            },
-        });
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch deployment status: ${response.status}`);
-        }
-
-        const deploymentData = await response.json();
-
-        // Update deployment status in the database
-        const updatedDeployment = await db.vercelDeployment.update({
-            where: { id: deploymentId },
-            data: {
-                status: deploymentData.status,
-                url: deploymentData.url,
-                meta: deploymentData,
-            },
-        });
-
-        return { success: true, deployment: updatedDeployment };
-    } catch (error) {
-        console.error('Error checking deployment status:', error);
-        return { success: false, error: (error as Error).message };
-    }
-}
-
-export async function deleteVercelProject(workspaceId: string) {
-    try {
-        const currentClerkUser = await currentUser();
-        const userId = currentClerkUser?.id || null;
-        if (!userId) {
-            throw new Error('Unauthorized');
-        }
-
-        const user = await db.user.findUnique({
-            where: { clerkId: userId },
-            select: { id: true, vercelToken: true },
-        });
-
-        if (!user || !user.vercelToken) {
-            throw new Error('Vercel token not found');
-        }
-
-        const vercelProject = await db.vercelProject.findUnique({
-            where: { workspaceId },
-        });
-
-        if (!vercelProject) {
-            throw new Error('Vercel project not found for this workspace');
-        }
-
-        // Delete project from Vercel
-        const deleteResponse = await fetch(`https://api.vercel.com/v9/projects/${vercelProject.projectId}`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${user.vercelToken}`,
-            },
-        });
-
-        if (!deleteResponse.ok) {
-            const errorData = await deleteResponse.json();
-            console.error('Failed to delete project from Vercel:', errorData);
-            // Continue with database deletion even if the API call fails
-        }
-
-        // Delete project from database (cascade will delete deployments)
-        await db.vercelProject.delete({
-            where: { id: vercelProject.id },
-        });
-
-        revalidatePath(`/workspaces/${workspaceId}`);
-        return { success: true };
-    } catch (error) {
-        console.error('Error deleting Vercel project:', error);
-        return { success: false, error: (error as Error).message };
-    }
+    return { deployment };
 }

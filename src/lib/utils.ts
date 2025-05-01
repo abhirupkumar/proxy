@@ -145,6 +145,71 @@ function _stripIndents(value: string) {
     .replace(/[\r\n]$/, '');
 }
 
+export function extractEnvVariables(content: string): Record<string, string> {
+  const envVars: Record<string, string> = {};
+
+  // Split by lines and process each line
+  const lines = content.split('\n');
+
+  for (const line of lines) {
+    // Skip comments and empty lines
+    const trimmedLine = line.trim();
+    if (!trimmedLine || trimmedLine.startsWith('#')) {
+      continue;
+    }
+
+    // Find the first equals sign (to handle values that contain = signs)
+    const equalSignIndex = trimmedLine.indexOf('=');
+    if (equalSignIndex < 1) continue; // Skip invalid lines
+
+    const key = trimmedLine.substring(0, equalSignIndex).trim();
+    let value = trimmedLine.substring(equalSignIndex + 1).trim();
+
+    // Handle quoted values
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.substring(1, value.length - 1);
+    }
+
+    // Store the key-value pair
+    envVars[key] = value;
+  }
+
+  return envVars;
+}
+
+/**
+ * Formats a date to a readable string
+ */
+export function formatDate(date: Date | null): string {
+  if (!date) return 'Never';
+
+  return new Date(date).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+/**
+ * Returns a color class based on deployment status
+ */
+export function getStatusColor(status: string): string {
+  switch (status.toUpperCase()) {
+    case 'READY':
+      return 'text-green-500';
+    case 'ERROR':
+      return 'text-red-500';
+    case 'BUILDING':
+    case 'QUEUED':
+      return 'text-amber-500';
+    default:
+      return 'text-gray-500';
+  }
+}
+
 export function constructMetadata({
   title = "Proxy",
   description = "Proxy - One stop solution for all your full stack apps",

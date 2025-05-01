@@ -11,6 +11,7 @@ import dynamic from 'next/dynamic'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { PostHogProvider } from './PostHogProvider'
+import { VercelProvider } from '@/context/VercelContext'
 const NextThemesProvider = dynamic(
     () => import('next-themes').then((e) => e.ThemeProvider),
     {
@@ -30,13 +31,15 @@ export function Provider({
             <Toaster />
             <TooltipProvider>
                 <WorkspaceDataProvider>
-                    <Header />
-                    <PostHogProvider>
-                        <SidebarProvider defaultOpen={false}>
-                            <AppSidebar />
-                            {children}
-                        </SidebarProvider>
-                    </PostHogProvider>
+                    <VercelProvider>
+                        <Header />
+                        <PostHogProvider>
+                            <SidebarProvider defaultOpen={false}>
+                                <AppSidebar />
+                                {children}
+                            </SidebarProvider>
+                        </PostHogProvider>
+                    </VercelProvider>
                 </WorkspaceDataProvider>
             </TooltipProvider>
         </NextThemesProvider>
