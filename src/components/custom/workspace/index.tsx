@@ -33,6 +33,7 @@ import CustomMarkdown from './_components/CustomMarkdown';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { getIndexedDB } from '@/lib/indexed-db';
+import VercelDeployButton from '../vercel-deploy-button';
 
 type ImageItem = {
     id: string;
@@ -426,6 +427,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                     </TabsList>
                                     <div className='flex ml-auto' suppressHydrationWarning>
                                         {userId == dbUser.clerkId && <PrivateButton workspaceId={workspace.id} />}
+                                        {userId == dbUser.clerkId && <VercelDeployButton workspaceId={workspace.id} />}
                                         {userId == dbUser.clerkId && (!loading ? <GithubConnectButton
                                             workspaceId={workspace.id}
                                             isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}

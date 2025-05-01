@@ -158,7 +158,7 @@ export function GithubConnectButton({
     };
 
     return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 ml-3">
             <Button
                 variant={hasUnpushedChanges ? "outline" : "link"}
                 onClick={handleButtonClick}

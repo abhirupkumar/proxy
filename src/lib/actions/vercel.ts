@@ -22,7 +22,7 @@ export async function getVercelAuthUrl() {
     if (!userId) throw new Error('Not authenticated');
 
     const clientId = process.env.VERCEL_CLIENT_ID;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/vercel/callback`;
+    const redirectUri = `${process.env.NEXT_PUBLIC_HOST}/api/vercel/callback`;
 
     if (!clientId) throw new Error('Vercel client ID not configured');
 
