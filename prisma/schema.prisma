@@ -19,7 +19,9 @@ model User {
   createdAt   DateTime    @default(now())
   workspaces  Workspace[]
   githubToken String?
-  vercelToken String? // Added for Vercel integration
+  vercelToken String?
+  vercelState String?
+  vercelUser  Json?
 }
 
 model Workspace {

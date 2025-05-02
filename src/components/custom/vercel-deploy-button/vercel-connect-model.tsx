@@ -16,13 +16,6 @@ export default function VercelConnectModal({ isOpen, onClose, onConnected }: Ver
     const { vercelState, connectVercel, disconnectVercel, refreshVercelProjects } = useVercel();
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    // Call onConnected when connection state changes to true
-    useEffect(() => {
-        if (vercelState.isConnected && onConnected) {
-            onConnected();
-        }
-    }, [vercelState.isConnected, onConnected]);
-
     const handleConnect = async () => {
         await connectVercel();
     };

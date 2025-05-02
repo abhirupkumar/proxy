@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
         if (!code || !state) {
             return NextResponse.redirect(
-                `${process.env.NEXT_PUBLIC_APP_URL}?error=Missing+parameters`
+                `${process.env.NEXT_PUBLIC_HOST}?error=Missing+parameters`
             );
         }
 
@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
 
         // Redirect back to app with success
         return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}?vercelConnected=true&vercelUser=${encodeURIComponent(result.user.username || result.user.name)}`
+            `${process.env.NEXT_PUBLIC_HOST}?vercelConnected=true&vercelUser=${encodeURIComponent(result.user.username || result.user.name)}`
         );
     } catch (error) {
         console.error('Error handling Vercel callback:', error);
         return NextResponse.redirect(
-            `${process.env.NEXT_PUBLIC_APP_URL}?error=${encodeURIComponent(
+            `${process.env.NEXT_PUBLIC_HOST}?error=${encodeURIComponent(
                 error instanceof Error ? error.message : 'Failed to connect to Vercel'
             )}`
         );

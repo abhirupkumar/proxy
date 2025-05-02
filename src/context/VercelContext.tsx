@@ -1,6 +1,6 @@
 'use client';
 
-import { createVercelProject, deployToVercel, disconnectVercel, getVercelAuthUrl, getVercelProjects } from '@/lib/actions/vercel';
+import { createVercelProject, deployToVercel, disconnectVercel, getVercelAuthUrl, getVercelProjects, getVercelUser } from '@/lib/actions/vercel';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -51,6 +51,7 @@ type VercelContextType = {
     setIsModalOpen: (value: boolean) => void;
     selectedProject: VercelProject | null;
     setSelectedProject: (project: VercelProject | null) => void;
+    loading: boolean
 };
 
 const initialState: VercelState = {
@@ -68,6 +69,7 @@ export function VercelProvider({ children }: { children: ReactNode }) {
     const [vercelState, setVercelState] = useState<VercelState>(initialState);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProject, setSelectedProject] = useState<VercelProject | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
     const { toast } = useToast();
 
     // Initialize from localStorage
@@ -93,46 +95,26 @@ export function VercelProvider({ children }: { children: ReactNode }) {
 
     // Check URL for Vercel connection parameters
     useEffect(() => {
-        const searchParams = new URLSearchParams(window.location.search);
-        const vercelConnected = searchParams.get('vercelConnected');
-        const vercelUser = searchParams.get('vercelUser');
-
-        if (vercelConnected === 'true' && vercelUser) {
-            // Clean the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            // Set connected state and fetch projects
+        const getVerselState = async () => {
+            const vercelUser: VercelUser = (await getVercelUser()) as any;
+            if (!vercelUser)
+                toast({
+                    title: "Vercel Error"
+                })
             setVercelState(prev => ({
                 ...prev,
                 isConnected: true,
                 user: {
-                    id: '',
-                    name: vercelUser,
-                    email: '',
-                    username: vercelUser
+                    id: vercelUser.id,
+                    name: vercelUser.name,
+                    email: vercelUser.email,
+                    username: vercelUser.username
                 }
             }));
-
-            toast({
-                title: "Success",
-                description: `Connected to Vercel as ${vercelUser}`,
-            });
-
-            // Fetch projects after connection
             refreshVercelProjects();
         }
 
-        const error = searchParams.get('error');
-        if (error) {
-            // Clean the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-
-            toast({
-                title: "Error",
-                description: decodeURIComponent(error),
-                variant: "destructive",
-            });
-        }
+        getVerselState();
     }, []);
 
     const updateVercelState = (updates: Partial<VercelState>) => {
@@ -221,6 +203,9 @@ export function VercelProvider({ children }: { children: ReactNode }) {
             });
             updateVercelState({ isFetchingStats: false });
         }
+        finally {
+            setLoading(false);
+        }
     };
 
     const createProject = async (workspaceId: string, projectData: any) => {
@@ -278,6 +263,7 @@ export function VercelProvider({ children }: { children: ReactNode }) {
                 setIsModalOpen,
                 selectedProject,
                 setSelectedProject,
+                loading
             }}
         >
             {children}

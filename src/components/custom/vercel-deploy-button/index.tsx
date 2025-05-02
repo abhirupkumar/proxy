@@ -8,6 +8,8 @@ import VercelConnectModal from './vercel-connect-model';
 import VercelProjectModal from './vercel-project-model';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
+import { getWorkspace } from '@/lib/queries';
+import { useWorkspaceData } from '@/context/WorkspaceDataContext';
 
 interface VercelDeployButtonProps {
     workspaceId: string;
@@ -27,6 +29,7 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
 
     const [isDeploying, setIsDeploying] = useState(false);
     const [showProjectModal, setShowProjectModal] = useState(false);
+    const { workspaceData } = useWorkspaceData();
 
     const handleDeployClick = async () => {
         // Check if connected to Vercel first
@@ -35,17 +38,14 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
             return;
         }
 
-        // If already have a connected project, deploy directly
-        const workspace = await fetch(`/api/workspaces/${workspaceId}`).then(res => res.json());
-
-        if (workspace?.vercelProject) {
-            await handleDeploy(workspace.vercelProject.projectId);
+        if (workspaceData?.vercelProject) {
+            await handleDeploy(workspaceData.vercelProject.projectId);
             return;
         }
 
         // Otherwise, show the project selection modal
-        await refreshVercelProjects(); // Refresh project list
         setShowProjectModal(true);
+        await refreshVercelProjects(); // Refresh project list
     };
 
     const handleDeploy = async (projectId: string) => {

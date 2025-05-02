@@ -64,7 +64,8 @@ export const getWorkspace = async (id: string) => {
             include: {
                 Messages: true,
                 githubRepo: true,
-                User: true
+                User: true,
+                vercelProject: true,
             },
         });
         return workspace;

@@ -36,14 +36,14 @@ export async function getVercelAuthUrl() {
         data: {
             // Using a temporary field to store state
             // In production, use a proper session store
-            githubToken: state, // Temporarily use this field to store vercel state
+            vercelState: state, // Temporarily use this field to store vercel state
         }
     });
 
     const scope = 'user read write';
 
     return {
-        url: `https://vercel.com/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scope)}&state=${state}`
+        url: `https://vercel.com/integrations/proxy-studio/new?state=${state}`
     };
 }
 
@@ -57,14 +57,14 @@ export async function handleVercelCallback(code: string, state: string) {
         where: { clerkId: userId }
     });
 
-    if (!user || user.githubToken !== state) {
+    if (!user || user.vercelState !== state) {
         throw new Error('Invalid state parameter');
     }
 
     // Exchange code for access token
     const clientId = process.env.VERCEL_CLIENT_ID;
     const clientSecret = process.env.VERCEL_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/vercel/callback`;
+    const redirectUri = `${process.env.NEXT_PUBLIC_HOST}/api/vercel/callback`;
 
     if (!clientId || !clientSecret) {
         throw new Error('Vercel client credentials not configured');
@@ -91,7 +91,10 @@ export async function handleVercelCallback(code: string, state: string) {
 
     // Get user info
     const userResponse = await fetch('https://api.vercel.com/v2/user', {
-        headers: { Authorization: `Bearer ${accessToken}` }
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+        }
     });
 
     if (!userResponse.ok) {
@@ -105,12 +108,11 @@ export async function handleVercelCallback(code: string, state: string) {
         where: { clerkId: userId },
         data: {
             vercelToken: accessToken,
-            // Clear the temporary state
-            githubToken: null,
+            vercelState: null,
+            vercelUser: userData.user || userData
         }
     });
 
-    // Return user info and token
     return {
         user: userData.user,
         token: accessToken
@@ -130,6 +132,21 @@ export async function disconnectVercel() {
     });
 
     return { success: true };
+}
+
+export async function getVercelUser() {
+    const currentClerkUser = await currentUser();
+    const userId = currentClerkUser?.id || null;
+    if (!userId) throw new Error('Not authenticated');
+
+    const dbUser = await db.user.findUnique({
+        where: {
+            clerkId: userId
+        },
+    })
+    if (dbUser?.vercelUser && dbUser?.vercelUser != null)
+        return dbUser?.vercelUser;
+    return null;
 }
 
 export async function getVercelProjects() {

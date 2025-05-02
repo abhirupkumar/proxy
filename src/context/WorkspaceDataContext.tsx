@@ -24,6 +24,8 @@ interface WorkspaceDataContextType {
     handleFileSelect: (fullPath: string) => void
     isPrivate: boolean;
     setIsPrivate: React.Dispatch<React.SetStateAction<boolean>>;
+    workspaceData: any | null;
+    setWorkspaceData: React.Dispatch<React.SetStateAction<any | null>>;
 }
 
 const WorkspaceDataContext = createContext<WorkspaceDataContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ export const WorkspaceDataProvider: React.FC<{ children: ReactNode }> = ({ child
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
     const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
     const [isPrivate, setIsPrivate] = useState<boolean>(true);
+    const [workspaceData, setWorkspaceData] = useState<any | null>(null)
 
     const handleFileSelect = (fullPath: string) => {
         setSelectedFile(fullPath);
@@ -45,7 +48,7 @@ export const WorkspaceDataProvider: React.FC<{ children: ReactNode }> = ({ child
     };
 
     return (
-        <WorkspaceDataContext.Provider value={{ files, setFiles, selectedFile, setSelectedFile, selectedFiles, setSelectedFiles, handleFileSelect, messages, setMessages, isPrivate, setIsPrivate }}>
+        <WorkspaceDataContext.Provider value={{ files, setFiles, selectedFile, setSelectedFile, selectedFiles, setSelectedFiles, handleFileSelect, messages, setMessages, isPrivate, setIsPrivate, workspaceData, setWorkspaceData }}>
             {children}
         </WorkspaceDataContext.Provider>
     );
