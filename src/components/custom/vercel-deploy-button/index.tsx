@@ -23,7 +23,8 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
         setIsModalOpen,
         isModalOpen,
         selectedProject,
-        setSelectedProject
+        setSelectedProject,
+        loading
     } = useVercel();
     const { resolvedTheme } = useTheme();
 
@@ -68,7 +69,7 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
                 onClick={handleDeployClick}
                 className="flex items-center gap-2"
                 variant="outline"
-                disabled={isDeploying || vercelState.isConnecting}
+                disabled={isDeploying || vercelState.isConnecting || loading}
             >
                 {isDeploying ? (
                     <>
