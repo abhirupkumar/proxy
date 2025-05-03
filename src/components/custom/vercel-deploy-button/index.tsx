@@ -79,7 +79,7 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
                 ) : (
                     <>
                         {resolvedTheme == 'dark' ? <Image src="/vercel.svg" height={13} width={13} alt="vercel-icon" /> : <Image src="/vercel-white.png" height={15} width={15} alt="vercel-icon" />}
-                        Deploy
+                        {workspaceData?.vercelProject ? "Redeploy" : "Deploy"}
                     </>
                 )}
             </Button>
