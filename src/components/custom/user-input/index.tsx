@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import NextImage from 'next/image';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTheme } from 'next-themes';
+import { useWorkspaceData } from '@/context/WorkspaceDataContext';
 
 const MAXIMUM_IMAGES = 4;
 
@@ -26,7 +27,6 @@ type ImageItem = {
     error?: string;
 };
 
-
 const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
     const { resolvedTheme } = useTheme();
@@ -35,6 +35,7 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
     const pathname = usePathname();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    const { template, setTemplate } = useWorkspaceData();
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files || e.target.files.length === 0) return;
@@ -255,14 +256,14 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                     <p className='text-sm'>Clone</p>
                 </button>
 
-                <Select defaultValue='reactjs'>
+                <Select value={template} onValueChange={(text) => setTemplate(text)}>
                     <SelectTrigger className="w-fit px-1">
                         <SelectValue placeholder="Select a Template" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
                             <SelectLabel>Templates</SelectLabel>
-                            <SelectItem value="reactjs">
+                            <SelectItem value="react">
                                 <span className='flex gap-x-1'>
                                     <img className='w-[16px]' src="/react.svg" alt="react" />
                                     <p>React.js</p>

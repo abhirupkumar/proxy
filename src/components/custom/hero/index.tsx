@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import ButtonLoader from '../button-loader';
 import UserInput from '../user-input';
+import { useWorkspaceData } from '@/context/WorkspaceDataContext';
 
 type ImageItem = {
     id: string;
@@ -24,6 +25,7 @@ const Hero = ({ user }: { user: any }) => {
     const [images, setImages] = useState<ImageItem[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const router = useRouter();
+    const { template } = useWorkspaceData();
     const onGenerate = async (input: string) => {
         setUserInput(input)
         if (!user) {
@@ -34,7 +36,7 @@ const Hero = ({ user }: { user: any }) => {
         const messages = { role: "user", content: input }
         if (messages) {
             const imageUrls = images.map((image) => image.url).filter((url) => url !== undefined) as string[];
-            const workspace = await createWorkspace(messages, user, scrapeUrl, imageUrls);
+            const workspace = await createWorkspace(messages, user, scrapeUrl, imageUrls, template);
             if (workspace)
                 window.location.href = `${process.env.NEXT_PUBLIC_APP_URL}/workspace/${workspace.id}`;
         }

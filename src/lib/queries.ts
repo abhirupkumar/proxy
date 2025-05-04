@@ -1,6 +1,6 @@
 "use server";
 
-import { ReactBasePrompt } from "@/data/BasePrompts";
+import { NextBasePrompt, ReactBasePrompt } from "@/data/BasePrompts";
 import { db } from "@/lib/db";
 import { clerkClient, currentUser } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client/edge";
@@ -32,12 +32,13 @@ export const getUser = async () => {
     }
 }
 
-export const createWorkspace = async (messages: { role: string, content: string }, user: any, scrapeUrl: string, images: string[]) => {
+export const createWorkspace = async (messages: { role: string, content: string }, user: any, scrapeUrl: string, images: string[], template: string) => {
     try {
         const workspace = await db.workspace.create({
             data: {
                 userId: user.id,
-                fileData: ReactBasePrompt,
+                fileData: template == "react" ? ReactBasePrompt : NextBasePrompt,
+                template: template,
                 Messages: {
                     create: {
                         role: messages.role,

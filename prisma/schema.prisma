@@ -36,6 +36,7 @@ model Workspace {
   vercelProject   VercelProject? // Added relation to VercelProject
   isChangesPushed Boolean        @default(true)
   isPrivate       Boolean        @default(true)
+  template        String         @default("react")
 }
 
 model Message {

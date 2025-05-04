@@ -63,7 +63,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const { resolvedTheme } = useTheme();
     const [iconLoading, setIconLoading] = useState(false);
 
-    const { messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, setWorkspaceData } = useWorkspaceData();
+    const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, setWorkspaceData } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast()
     const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
@@ -79,6 +79,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
 
     useEffect(() => {
         setWorkspaceData(workspace);
+        setTemplate(workspace.template);
         const sortedMessages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt)
         setMessages(sortedMessages.map((msg: Message) => ({
             role: msg.role,
