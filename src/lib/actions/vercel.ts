@@ -234,7 +234,7 @@ export async function createVercelProject(
     }
 
     // Create project on Vercel
-    const response = await fetch('https://api.vercel.com/v9/projects', {
+    const response = await fetch('https://api.vercel.com/v11/projects', {
         method: 'POST',
         headers: {
             Authorization: `Bearer ${user.vercelToken}`,

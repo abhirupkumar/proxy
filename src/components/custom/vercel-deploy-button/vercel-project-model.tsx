@@ -23,7 +23,7 @@ interface VercelProjectModalProps {
 
 const FRAMEWORKS = [
     { id: 'nextjs', name: 'Next.js' },
-    { id: 'react', name: 'React' },
+    { id: 'react', name: 'Create React App' },
     { id: 'vue', name: 'Vue' },
     { id: 'svelte', name: 'Svelte' },
     { id: 'static', name: 'Static Site' },
@@ -46,10 +46,10 @@ export default function VercelProjectModal({
     // Form state for new project
     const [newProject, setNewProject] = useState({
         name: '',
-        framework: template,
+        framework: FRAMEWORKS.find(framework => framework.id == template)?.name || 'Other',
         buildCommand: 'npm run build',
         installCommand: 'npm install',
-        outputDirectory: template == 'nextjs' ? '.next' : "",
+        outputDirectory: "",
         environmentVariables: ''
     });
 
@@ -243,7 +243,7 @@ export default function VercelProjectModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {FRAMEWORKS.map(framework => (
-                                            <SelectItem key={framework.id} value={framework.id}>
+                                            <SelectItem key={framework.id} value={framework.name}>
                                                 {framework.name}
                                             </SelectItem>
                                         ))}
