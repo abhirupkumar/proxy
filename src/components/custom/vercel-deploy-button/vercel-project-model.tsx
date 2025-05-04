@@ -12,6 +12,7 @@ import { Loader2, RefreshCw, PlusCircle, ArrowUpDown, ExternalLink } from 'lucid
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useWorkspaceData } from '@/context/WorkspaceDataContext';
 
 interface VercelProjectModalProps {
     isOpen: boolean;
@@ -36,7 +37,7 @@ export default function VercelProjectModal({
     onProjectSelected
 }: VercelProjectModalProps) {
     const { vercelState, refreshVercelProjects, createProject } = useVercel();
-
+    const { template } = useWorkspaceData();
     const [activeTab, setActiveTab] = useState('existing');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -45,10 +46,10 @@ export default function VercelProjectModal({
     // Form state for new project
     const [newProject, setNewProject] = useState({
         name: '',
-        framework: 'nextjs',
+        framework: template,
         buildCommand: 'npm run build',
         installCommand: 'npm install',
-        outputDirectory: '.next',
+        outputDirectory: template == 'nextjs' ? '.next' : "",
         environmentVariables: ''
     });
 
