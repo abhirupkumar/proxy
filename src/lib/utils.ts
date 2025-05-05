@@ -203,7 +203,7 @@ export function getStatusColor(status: string): string {
     case 'ERROR':
       return 'text-red-500';
     case 'BUILDING':
-    case 'QUEUED':
+    case 'CREATED':
       return 'text-amber-500';
     default:
       return 'text-gray-500';
