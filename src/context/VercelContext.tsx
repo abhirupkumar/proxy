@@ -221,6 +221,7 @@ export function VercelProvider({ children }: { children: ReactNode }) {
 
             return result;
         } catch (error) {
+            console.log(error)
             console.error('Failed to create Vercel project:', error);
             toast({
                 title: "Error",

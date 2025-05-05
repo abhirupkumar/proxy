@@ -98,7 +98,6 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
         setLoading(false);
     }, [workspace]);
 
-
     const handleDownload = async () => {
         const zip = new JSZip();
         const projectFolder = zip.folder(artifactId);

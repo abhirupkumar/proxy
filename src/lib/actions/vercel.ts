@@ -361,12 +361,12 @@ export async function deployToVercel(
     }
 
     // Format files for Vercel deployment
-    const files: Record<string, { file: { content: string } }> = {};
+    const files: Array<{ data: string, encoding: string, file: string }> = [];
 
     Object.entries(fileData).forEach(([path, { code }]) => {
         // Skip .git files and env files
         if (!path.startsWith('.git/') && path !== '.env' && path !== '.env.local') {
-            files[path] = { file: { content: code } };
+            files.push({ data: code, encoding: "utf-8", file: path });
         }
     });
 
@@ -380,7 +380,6 @@ export async function deployToVercel(
         body: JSON.stringify({
             name: vercelProject.projectName,
             files,
-            projectId,
             target: 'production'
         })
     });

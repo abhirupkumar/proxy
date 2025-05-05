@@ -58,6 +58,7 @@ export const createWorkspace = async (messages: { role: string, content: string 
 
 export const getWorkspace = async (id: string) => {
     try {
+
         const workspace = await db.workspace.findUnique({
             where: {
                 id: id,
@@ -66,7 +67,11 @@ export const getWorkspace = async (id: string) => {
                 Messages: true,
                 githubRepo: true,
                 User: true,
-                vercelProject: true,
+                vercelProject: {
+                    include: {
+                        deployments: true // Include the deployment relationship
+                    }
+                },
             },
         });
         return workspace;

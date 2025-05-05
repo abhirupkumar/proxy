@@ -22,12 +22,12 @@ interface VercelProjectModalProps {
 }
 
 const FRAMEWORKS = [
-    { id: 'nextjs', name: 'Next.js' },
-    { id: 'react', name: 'Create React App' },
-    { id: 'vue', name: 'Vue' },
-    { id: 'svelte', name: 'Svelte' },
-    { id: 'static', name: 'Static Site' },
-    { id: 'other', name: 'Other' }
+    { id: 'nextjs', name: 'Next.js', value: 'nextjs' },
+    { id: 'react', name: 'Create React App', value: 'create-react-app' },
+    { id: 'vue', name: 'Vue', value: 'vue' },
+    { id: 'svelte', name: 'Svelte', value: 'svelte' },
+    { id: 'static', name: 'Static Site', value: 'vite' },
+    { id: 'other', name: 'Other', value: 'other' }
 ];
 
 export default function VercelProjectModal({
@@ -37,7 +37,7 @@ export default function VercelProjectModal({
     onProjectSelected
 }: VercelProjectModalProps) {
     const { vercelState, refreshVercelProjects, createProject } = useVercel();
-    const { template } = useWorkspaceData();
+    const { template, workspaceData } = useWorkspaceData();
     const [activeTab, setActiveTab] = useState('existing');
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
@@ -45,8 +45,8 @@ export default function VercelProjectModal({
 
     // Form state for new project
     const [newProject, setNewProject] = useState({
-        name: '',
-        framework: FRAMEWORKS.find(framework => framework.id == template)?.name || 'Other',
+        name: workspaceData.artifactId,
+        framework: FRAMEWORKS.find(framework => framework.id == template)?.value || 'Other',
         buildCommand: 'npm run build',
         installCommand: 'npm install',
         outputDirectory: "",
@@ -96,6 +96,7 @@ export default function VercelProjectModal({
             // Use the new project for deployment
             if (result.project?.projectId) {
                 onProjectSelected(result.project.projectId);
+                onClose();
             }
         } finally {
             setIsCreating(false);
@@ -243,7 +244,7 @@ export default function VercelProjectModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         {FRAMEWORKS.map(framework => (
-                                            <SelectItem key={framework.id} value={framework.name}>
+                                            <SelectItem key={framework.id} value={framework.value}>
                                                 {framework.name}
                                             </SelectItem>
                                         ))}
