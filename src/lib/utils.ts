@@ -198,12 +198,12 @@ export function formatDate(date: Date | null): string {
  */
 export function getStatusColor(status: string): string {
   switch (status.toUpperCase()) {
-    case 'READY':
+    case 'SUCCEEDED':
       return 'text-green-500';
     case 'ERROR':
       return 'text-red-500';
     case 'BUILDING':
-    case 'CREATED':
+    case 'PROMOTED':
       return 'text-amber-500';
     default:
       return 'text-gray-500';

@@ -70,7 +70,7 @@ export interface VercelUser {
 export interface VercelDeployment {
     id: string;
     url: string;
-    status: 'BUILDING' | 'ERROR' | 'READY' | 'CANCELED' | 'CREATED';
+    status: 'BUILDING' | 'ERROR' | 'SUCCEEDED' | 'CANCELED' | 'PROMOTED';
     createdAt: string;
     meta?: Record<string, any>;
 }

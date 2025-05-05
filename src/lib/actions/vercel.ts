@@ -396,7 +396,7 @@ export async function deployToVercel(
         data: {
             deploymentId: deploymentData.id,
             url: deploymentData.url ? `https://${deploymentData.url}` : null,
-            status: deploymentData.readyState || 'CREATED',
+            status: deploymentData.readyState || 'BUILDING',
             project: {
                 connect: { id: vercelProject.id }
             },
