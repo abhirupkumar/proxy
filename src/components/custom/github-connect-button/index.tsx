@@ -151,7 +151,7 @@ export function GithubConnectButton({
     // Determine button text based on state
     const getButtonText = () => {
         if (isLoading) return "Processing...";
-        if (!isConnected) return "Connect Github";
+        if (!isConnected) return "Connect";
         if (repoUrl == "") return "Create Repo";
         if (hasUnpushedChanges) return "Push Changes";
         return "";

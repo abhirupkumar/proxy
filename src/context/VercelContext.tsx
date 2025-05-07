@@ -1,8 +1,9 @@
 'use client';
 
 import { createVercelProject, deployToVercel, disconnectVercel, getVercelAuthUrl, getVercelProjects, getVercelUser } from '@/lib/actions/vercel';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { useToast } from "@/hooks/use-toast";
+import { useWorkspaceData } from './WorkspaceDataContext';
 
 // Define types
 export type VercelProject = {
@@ -51,7 +52,9 @@ type VercelContextType = {
     setIsModalOpen: (value: boolean) => void;
     selectedProject: VercelProject | null;
     setSelectedProject: (project: VercelProject | null) => void;
-    loading: boolean
+    deploymentInfo: DeploymentInfo;
+    setDeploymentInfo: Dispatch<SetStateAction<DeploymentInfo>>
+    loading: boolean;
 };
 
 const initialState: VercelState = {
@@ -63,6 +66,13 @@ const initialState: VercelState = {
     stats: null,
 };
 
+interface DeploymentInfo {
+    status: 'BUILDING' | 'ERROR' | 'SUCCEEDED' | 'CANCELED' | 'PROMOTED' | 'NONE';
+    url?: string;
+    error?: string;
+    deploymentId?: string;
+}
+
 const VercelContext = createContext<VercelContextType | undefined>(undefined);
 
 export function VercelProvider({ children }: { children: ReactNode }) {
@@ -70,28 +80,22 @@ export function VercelProvider({ children }: { children: ReactNode }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedProject, setSelectedProject] = useState<VercelProject | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
+    const { workspaceData } = useWorkspaceData();
+    const [deploymentInfo, setDeploymentInfo] = useState<DeploymentInfo>({ status: 'NONE' });
     const { toast } = useToast();
 
-    // Initialize from localStorage
     useEffect(() => {
-        const storedConnection = localStorage.getItem('vercel_connection');
-        if (storedConnection) {
-            try {
-                const parsedData = JSON.parse(storedConnection);
-                setVercelState({
-                    ...parsedData,
-                    isConnected: !!parsedData.token,
-                });
-
-                // If token exists, refresh stats
-                if (parsedData.token) {
-                    refreshVercelProjects();
-                }
-            } catch (error) {
-                console.error('Failed to parse stored Vercel connection', error);
-            }
+        if (workspaceData != null && workspaceData.vercelProject && workspaceData.vercelProject.deployments) {
+            const deployments = workspaceData.vercelProject.deployments.sort((a: any, b: any) => a.createdAt - b.createdAt)
+            const latestDeploment = deployments[deployments.length - 1];
+            setDeploymentInfo({
+                status: latestDeploment?.status,
+                url: latestDeploment?.url ?? "",
+                error: "",
+                deploymentId: latestDeploment?.deploymentId
+            })
         }
-    }, []);
+    }, [workspaceData])
 
     // Check URL for Vercel connection parameters
     useEffect(() => {
@@ -120,11 +124,6 @@ export function VercelProvider({ children }: { children: ReactNode }) {
     const updateVercelState = (updates: Partial<VercelState>) => {
         setVercelState(prev => {
             const newState = { ...prev, ...updates };
-
-            // Persist to localStorage if token changes
-            if ('token' in updates || 'user' in updates) {
-                localStorage.setItem('vercel_connection', JSON.stringify(newState));
-            }
 
             return newState;
         });
@@ -166,7 +165,6 @@ export function VercelProvider({ children }: { children: ReactNode }) {
                 isConnected: false
             });
 
-            localStorage.removeItem('vercel_connection');
             toast({
                 title: "Success",
                 description: 'Disconnected from Vercel',
@@ -264,6 +262,8 @@ export function VercelProvider({ children }: { children: ReactNode }) {
                 setIsModalOpen,
                 selectedProject,
                 setSelectedProject,
+                deploymentInfo,
+                setDeploymentInfo,
                 loading
             }}
         >

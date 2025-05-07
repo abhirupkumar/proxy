@@ -45,7 +45,7 @@ export default function VercelProjectModal({
 
     // Form state for new project
     const [newProject, setNewProject] = useState({
-        name: workspaceData.artifactId,
+        name: workspaceData?.artifactId ?? "",
         framework: FRAMEWORKS.find(framework => framework.id == template)?.value || 'Other',
         buildCommand: 'npm run build',
         installCommand: 'npm install',

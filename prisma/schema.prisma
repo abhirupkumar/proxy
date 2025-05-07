@@ -85,6 +85,7 @@ model VercelDeployment {
   id           String        @id @default(uuid()) @db.Uuid
   deploymentId String        @unique
   url          String?
+  error        String?
   status       String // "SUCCEEDED", "ERROR", "BUILDING", etc.
   createdAt    DateTime      @default(now())
   projectId    String        @db.Uuid

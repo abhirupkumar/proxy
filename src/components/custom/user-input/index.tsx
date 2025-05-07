@@ -256,7 +256,7 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                     <p className='text-sm'>Clone</p>
                 </button>
 
-                <Select value={template} onValueChange={(text) => setTemplate(text)}>
+                {pathname == "/" && <Select value={template} onValueChange={(text) => setTemplate(text)}>
                     <SelectTrigger className="w-fit px-1">
                         <SelectValue placeholder="Select a Template" />
                     </SelectTrigger>
@@ -277,7 +277,7 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
                             </SelectItem>
                         </SelectGroup>
                     </SelectContent>
-                </Select>
+                </Select>}
 
                 <span className='ml-auto flex'>
                     {!loading ? <ArrowRight

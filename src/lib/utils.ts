@@ -193,26 +193,32 @@ export function formatDate(date: Date | null): string {
   });
 }
 
-/**
- * Returns a color class based on deployment status
- */
-export function getStatusColor(status: string): string {
-  switch (status.toUpperCase()) {
+// Get status text
+export const getStatusText = (status: string) => {
+  switch (status) {
+    case 'READY':
     case 'SUCCEEDED':
-      return 'text-green-500';
-    case 'ERROR':
-      return 'text-red-500';
-    case 'BUILDING':
     case 'PROMOTED':
-      return 'text-amber-500';
+      return 'Deployed';
+    case 'ERROR':
+    case 'FAILED':
+      return 'Failed';
+    case 'BUILDING':
+    case 'INITIALIZING':
+      return 'Building';
+    case 'QUEUED':
+      return 'Queued';
+    case 'CANCELED':
+      return 'Canceled';
+    case 'NONE':
     default:
-      return 'text-gray-500';
+      return '';
   }
-}
+};
 
 export function constructMetadata({
   title = "Proxy",
-  description = "Proxy - One stop solution for all your full stack apps",
+  description = "Proxy - AI Full Stack Developer",
   image = "/logo-white.svg",
 }: {
   title?: string;
