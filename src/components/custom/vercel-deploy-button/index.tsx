@@ -1,17 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { RocketIcon, RefreshCw, Loader2, ExternalLink, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { RocketIcon, RefreshCw, Loader2, ExternalLink, CheckCircle, XCircle, AlertTriangle, MoreVertical } from 'lucide-react';
 import { useVercel } from '@/context/VercelContext';
 import VercelConnectModal from './vercel-connect-model';
 import VercelProjectModal from './vercel-project-model';
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
-import { getWorkspace } from '@/lib/queries';
 import { useWorkspaceData } from '@/context/WorkspaceDataContext';
-import { getStatusText } from '@/lib/utils';
+import { cn, getStatusText } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface VercelDeployButtonProps {
     workspaceId: string;
@@ -43,6 +43,7 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
         vercelState,
         refreshVercelProjects,
         deployProject,
+        disconnectVercel,
         setIsModalOpen,
         isModalOpen,
         selectedProject,
@@ -55,9 +56,10 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
     const [isDeploying, setIsDeploying] = useState(false);
     const [showProjectModal, setShowProjectModal] = useState(false);
     const { workspaceData } = useWorkspaceData();
+    const [showDropdown, setShowDropdown] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
     const handleDeployClick = async () => {
-        // Check if connected to Vercel first
         if (!vercelState.isConnected) {
             setIsModalOpen(true);
             return;
@@ -68,9 +70,8 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
             return;
         }
 
-        // Otherwise, show the project selection modal
         setShowProjectModal(true);
-        await refreshVercelProjects(); // Refresh project list
+        await refreshVercelProjects();
     };
 
     const handleDeploy = async (projectId: string) => {
@@ -87,10 +88,8 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
         setShowProjectModal(false);
     };
 
-    // Open the deployed site in a new tab
     const openDeployedSite = () => {
         if (deploymentInfo.url) {
-            // Check if the URL already has a protocol
             const url = deploymentInfo.url.startsWith('http')
                 ? deploymentInfo.url
                 : `https://${deploymentInfo.url}`;
@@ -99,76 +98,100 @@ export default function VercelDeployButton({ workspaceId }: VercelDeployButtonPr
         }
     };
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setShowDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
+    const handleMenuClick = () => {
+        if (!vercelState.isConnected) {
+            setIsModalOpen(true);
+            return;
+        }
+
+        if (workspaceData?.vercelProject) {
+            handleDeploy(workspaceData.vercelProject.projectId)
+            return;
+        }
+        setShowProjectModal(true)
+    }
+
+    const handleDisconnect = async () => {
+        await disconnectVercel();
+    };
+
     return (
         <>
-            <Button
-                onClick={handleDeployClick}
-                className="flex items-center gap-2"
-                variant="outline"
-                disabled={isDeploying || vercelState.isConnecting || loading}
-            >
-                {isDeploying ? (
-                    <>
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        Deploying...
-                    </>
-                ) : (
-                    <>
-                        {resolvedTheme == 'dark' ? <Image src="/vercel.svg" height={13} width={13} alt="vercel-icon" /> : <Image src="/vercel-white.png" height={15} width={15} alt="vercel-icon" />}
-                        {workspaceData?.vercelProject ? "Redeploy" : "Deploy"}
-                    </>
-                )}
-            </Button>
+            <div ref={dropdownRef} className={cn("!p-0", buttonVariants({ variant: 'outline' }))}>
+                <DropdownMenu open={showDropdown} onOpenChange={setShowDropdown}>
+                    <DropdownMenuTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            className="h-8 w-8 p-0 relative"
+                            disabled={isDeploying || vercelState.isConnecting || loading}
+                        >
+                            {vercelState.isConnected && (
+                                <div className="absolute top-0 right-0 h-2 w-2 rounded-full bg-green-500 shadow-md" />
+                            )}
+                            {isDeploying ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            {resolvedTheme == 'dark' ? <Image src="/vercel.svg" height={13} width={13} alt="vercel-icon" /> : <Image src="/vercel-white.png" height={15} width={15} alt="vercel-icon" />}
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            Deploy to Vercel
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            )}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleMenuClick} disabled={isDeploying || vercelState.isConnecting || loading} className='cursor-pointer'>
+                            {workspaceData?.vercelProject ? "Redeploy" : "Deploy"}
+                        </DropdownMenuItem>
+                        {vercelState.isConnected && <DropdownMenuItem onClick={handleDisconnect} disabled={isDeploying || vercelState.isConnecting || loading} className='cursor-pointer'>
+                            Disconnect
+                        </DropdownMenuItem>}
+                        {(deploymentInfo.status === 'SUCCEEDED' || deploymentInfo.status === 'PROMOTED') && deploymentInfo.url && (
+                            <DropdownMenuItem onClick={openDeployedSite}>
+                                Open deployed site
+                            </DropdownMenuItem>
+                        )}
+                        {deploymentInfo && deploymentInfo.status !== 'NONE' && <DropdownMenuSeparator />}
 
-            {/* Status indicator */}
-            {deploymentInfo && deploymentInfo.status !== 'NONE' && (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className="flex items-center gap-1">
-                                {renderStatusIcon(deploymentInfo.status)}
-                                <span className="text-xs text-muted-foreground">{getStatusText(deploymentInfo.status)}</span>
-                            </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            {deploymentInfo.status === 'ERROR'
-                                ? `Deployment failed: ${deploymentInfo.error || 'Unknown error'}`
-                                : `Deployment status: ${getStatusText(deploymentInfo.status)}`
-                            }
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )}
-
-            {/* Open site button */}
-            {(deploymentInfo.status === 'SUCCEEDED' || deploymentInfo.status === 'PROMOTED') && deploymentInfo.url && (
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={openDeployedSite}
-                                className="h-8 w-8 p-0"
-                            >
-                                <ExternalLink className="h-4 w-4" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            Open deployed site
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            )}
-
-            {/* Connection Modal */}
+                        {deploymentInfo && deploymentInfo.status !== 'NONE' && (
+                            <DropdownMenuItem disabled>
+                                <div className="flex items-center gap-1">
+                                    {renderStatusIcon(deploymentInfo.status)}
+                                    <span className="text-xs text-muted-foreground">{getStatusText(deploymentInfo.status)}</span>
+                                </div>
+                                {deploymentInfo.status === 'ERROR'
+                                    ? `Deployment failed: ${deploymentInfo.error || 'Unknown error'}`
+                                    : `Deployment status: ${getStatusText(deploymentInfo.status)}`
+                                }
+                            </DropdownMenuItem>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
             <VercelConnectModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 onConnected={() => setShowProjectModal(true)}
             />
 
-            {/* Project Selection Modal */}
             <VercelProjectModal
                 isOpen={showProjectModal}
                 onClose={() => setShowProjectModal(false)}
