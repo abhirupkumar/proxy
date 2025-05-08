@@ -67,7 +67,7 @@ const rehypeSanitizeOptions: RehypeSanitizeOptions = {
   tagNames: allowedHTMLElements,
   attributes: {
     ...defaultSchema.attributes,
-    div: [...(defaultSchema.attributes?.div ?? []), 'data*', ['className', '__boltRegex__']],
+    div: [...(defaultSchema.attributes?.div ?? []), 'data*', ['className', '__proxyRegex__']],
   },
   strip: [],
 };
