@@ -1,5 +1,6 @@
 import WorkspacePage from '@/components/custom/workspace';
-import { getWorkspace } from '@/lib/queries';
+import { db } from '@/lib/db';
+import { getUser, getWorkspace } from '@/lib/queries';
 import { constructMetadata } from '@/lib/utils';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { Metadata, ResolvingMetadata } from 'next';
@@ -30,6 +31,10 @@ const Workspace = async ({ params }: { params: Promise<{ id: string }> }) => {
     if (!workspace || !workspace.User) {
         return notFound();
     }
+    const userData = await getUser()
+    const initialSupabaseData = {
+        supabaseToken: userData?.supabaseToken ?? null,
+    }
     if (workspace.isPrivate) {
         if (!user) return notFound();
         else if (user.id !== workspace.User.clerkId) return notFound();
@@ -37,7 +42,7 @@ const Workspace = async ({ params }: { params: Promise<{ id: string }> }) => {
 
     return (
         <>
-            <WorkspacePage dbUser={workspace.User} workspace={workspace} />
+            <WorkspacePage dbUser={workspace.User} workspace={workspace} initialSupabaseData={initialSupabaseData} />
         </>
     )
 }

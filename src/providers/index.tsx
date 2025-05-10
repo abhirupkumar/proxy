@@ -12,6 +12,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import { Toaster } from '@/components/ui/toaster'
 import { PostHogProvider } from './PostHogProvider'
 import { VercelProvider } from '@/context/VercelContext'
+import { SupabaseProvider } from '@/context/SupabaseContext'
 const NextThemesProvider = dynamic(
     () => import('next-themes').then((e) => e.ThemeProvider),
     {
@@ -32,13 +33,15 @@ export function Provider({
             <TooltipProvider>
                 <WorkspaceDataProvider>
                     <VercelProvider>
-                        <Header />
-                        <PostHogProvider>
-                            <SidebarProvider defaultOpen={false}>
-                                <AppSidebar />
-                                {children}
-                            </SidebarProvider>
-                        </PostHogProvider>
+                        <SupabaseProvider>
+                            <Header />
+                            <PostHogProvider>
+                                <SidebarProvider defaultOpen={false}>
+                                    <AppSidebar />
+                                    {children}
+                                </SidebarProvider>
+                            </PostHogProvider>
+                        </SupabaseProvider>
                     </VercelProvider>
                 </WorkspaceDataProvider>
             </TooltipProvider>

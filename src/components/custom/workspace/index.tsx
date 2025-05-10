@@ -34,6 +34,8 @@ import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { getIndexedDB } from '@/lib/indexed-db';
 import VercelDeployButton from '../vercel-deploy-button';
+import { SupabaseButton } from '../supabase-button';
+import { useSupabase } from '@/context/SupabaseContext';
 
 type ImageItem = {
     id: string;
@@ -45,7 +47,11 @@ type ImageItem = {
 
 let saveTimeout: NodeJS.Timeout | null = null;
 
-const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) => {
+type initialSupabaseDataProp = {
+    supabaseToken: string | null;
+}
+
+const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any, workspace: any, initialSupabaseData: initialSupabaseDataProp }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
     const [title, setTitle] = useState<string>("")
@@ -69,6 +75,16 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
     const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
 
     const controller = new AbortController();
+
+    const { setConnection, setIsConnecting } = useSupabase();
+
+    useEffect(() => {
+        setConnection({
+            token: initialSupabaseData?.supabaseToken || null,
+            isConnected: !!(initialSupabaseData?.supabaseToken)
+        })
+        setIsConnecting(false)
+    }, [initialSupabaseData]);
 
     useEffect(() => {
         if (scrollContainerRef.current) {
@@ -428,6 +444,7 @@ const WorkspacePage = ({ dbUser, workspace }: { dbUser: any, workspace: any }) =
                                     </TabsList>
                                     <div className='flex ml-auto' suppressHydrationWarning>
                                         {userId == dbUser.clerkId && <PrivateButton workspaceId={workspace.id} />}
+                                        {userId == dbUser.clerkId && <SupabaseButton workspaceId={workspace.id} />}
                                         {userId == dbUser.clerkId && <VercelDeployButton workspaceId={workspace.id} />}
                                         {userId == dbUser.clerkId && (!loading ? <GithubConnectButton
                                             workspaceId={workspace.id}
