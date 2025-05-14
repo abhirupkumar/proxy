@@ -23,8 +23,6 @@ export const env = createEnv({
         IMAGEKIT_PRIVATE_KEY: z.string(),
         IMAGEKIT_URL_ENDPOINT: z.string().url(),
 
-        NODE_ENV: z.enum(["development", "production", "test"]),
-
         VERCEL_CLIENT_ID: z.string(),
         VERCEL_CLIENT_SECRET: z.string(),
 
@@ -65,8 +63,6 @@ export const env = createEnv({
 
         NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
         NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-
-        NODE_ENV: process.env.NODE_ENV,
 
         VERCEL_CLIENT_ID: process.env.VERCEL_CLIENT_ID,
         VERCEL_CLIENT_SECRET: process.env.VERCEL_CLIENT_SECRET,
