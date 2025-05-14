@@ -74,4 +74,6 @@ export const env = createEnv({
         SUPABASE_CLIENT_ID: process.env.SUPABASE_CLIENT_ID,
         SUPABASE_CLIENT_SECRET: process.env.SUPABASE_CLIENT_SECRET,
     },
+    skipValidation: true,
+    emptyStringAsUndefined: true,
 });
