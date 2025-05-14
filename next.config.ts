@@ -1,11 +1,11 @@
 import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
+import { NextConfig } from 'next';
 
 if (process.env.NODE_ENV === 'development') {
   await setupDevPlatform();
 }
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {

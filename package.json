@@ -101,6 +101,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.12",
     "@types/mime-types": "^2.1.4",
     "@types/node": "^20",
     "@types/react": "^19",
