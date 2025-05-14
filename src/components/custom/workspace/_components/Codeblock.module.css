@@ -1,0 +1,54 @@
+/* Add these to your styles.module.css file */
+
+.codeBlockContainer {
+    position: relative;
+    margin: 1rem 0;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+}
+
+.codeHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.codeLanguage {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.copyButton {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    background-color: transparent;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.copyButton:hover {
+    background-color: #eee;
+}
+
+.codeBlock {
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
+    background-color: #f8f8f8;
+}
+
+/* Ensure the markdown content maintains its existing styles */
+.MarkdownContent pre {
+    margin: 0;
+}

@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  clerkId       String      @unique
+  email         String      @unique
+  firstname     String?
+  lastname      String?
+  createdAt     DateTime    @default(now())
+  workspaces    Workspace[]
+  githubToken   String?
+  vercelToken   String?
+  vercelState   String?
+  vercelUser    Json?
+  supabaseToken String?
+}
+
+model Workspace {
+  id              String           @id @default(uuid()) @db.Uuid
+  title           String?
+  artifactId      String?
+  fileData        Json?
+  userId          String           @db.Uuid
+  Messages        Message[]
+  User            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  githubRepo      GitHubRepo?
+  vercelProject   VercelProject?
+  supabaseProject SupabaseProject?
+  isChangesPushed Boolean          @default(true)
+  isPrivate       Boolean          @default(true)
+  template        String           @default("react")
+  createdAt       DateTime         @default(now())
+}
+
+model Message {
+  id             String    @id @default(uuid())
+  role           String
+  content        String
+  url            String?
+  urlScrapedData Json?
+  photoUrls      String[]  @default([])
+  createdAt      DateTime  @default(now())
+  workspaceId    String    @db.Uuid
+  Workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model GitHubRepo {
+  id          String    @id @default(uuid()) @db.Uuid
+  repoName    String
+  repoOwner   String
+  repoUrl     String
+  workspaceId String    @unique @db.Uuid
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  lastSynced  DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+// Vercel integration model
+model VercelProject {
+  id              String             @id @default(uuid()) @db.Uuid
+  projectId       String             @unique
+  projectName     String
+  projectUrl      String?
+  teamId          String?
+  lastDeployed    DateTime?
+  buildCommand    String?
+  installCommand  String?
+  outputDirectory String?
+  framework       String?
+  workspaceId     String             @unique @db.Uuid
+  workspace       Workspace          @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt       DateTime           @default(now())
+  deployments     VercelDeployment[]
+}
+
+// Track individual deployments
+model VercelDeployment {
+  id           String        @id @default(uuid()) @db.Uuid
+  deploymentId String        @unique
+  url          String?
+  error        String?
+  status       String // "SUCCEEDED", "ERROR", "BUILDING", etc.
+  createdAt    DateTime      @default(now())
+  projectId    String        @db.Uuid
+  project      VercelProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  meta         Json? // For storing additional deployment metadata
+}
+
+// Supabase integration model
+model SupabaseProject {
+  id             String    @id @default(uuid()) @db.Uuid
+  projectId      String    @unique
+  projectName    String
+  projectRegion  String
+  supabaseUrl    String
+  anonKey        String
+  workspaceId    String    @unique @db.Uuid
+  workspace      Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  createdAt      DateTime  @default(now())
+  lastAccessed   DateTime  @default(now())
+  organizationId String?
+  status         String?   @default("active")
+  database       Json? // For storing database details like host, version, etc.
+}
