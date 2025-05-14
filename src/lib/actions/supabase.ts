@@ -237,7 +237,7 @@ export async function getSupabaseOAuthUrl(workspaceId?: string) {
         const state = Math.random().toString(36).substring(2);
         (await cookies()).set('supabase-oauth-state', state, {
             httpOnly: true,
-            secure: env.NODE_ENV === 'production',
+            secure: true,
             sameSite: 'lax',
             maxAge: 60 * 10, // 10 minutes
             path: '/',
