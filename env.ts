@@ -28,6 +28,7 @@ export const env = createEnv({
 
         SUPABASE_CLIENT_ID: z.string(),
         SUPABASE_CLIENT_SECRET: z.string(),
+        NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
     },
     /**
      * Specify your client-side environment variables schema here.
@@ -52,6 +53,8 @@ export const env = createEnv({
         GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
         CLERK_JWT_KEY: process.env.CLERK_JWT_KEY,
+
+        NODE_ENV: process.env.NODE_ENV,
 
         GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
         GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
