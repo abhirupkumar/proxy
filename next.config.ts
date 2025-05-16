@@ -49,7 +49,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
+  env: {
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
   skipTrailingSlashRedirect: true,
   output: 'standalone',
 };
