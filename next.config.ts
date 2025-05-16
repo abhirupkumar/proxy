@@ -32,6 +32,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '20mb',
     },
   },
+  serverExternalPackages: ['@prisma/client', 'prisma'],
   async rewrites() {
     return [
       {
