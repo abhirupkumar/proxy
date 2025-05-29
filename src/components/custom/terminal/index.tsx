@@ -10,6 +10,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Square, Play, Terminal as TerminalIcon, Package, Server } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 // Import WASM worker (you'll need to set this up)
 // import TerminalWorker from './terminal.worker?worker';
@@ -35,7 +36,7 @@ const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
     nextjs: {
         name: 'nextjs',
         displayName: 'Next.js',
-        port: 3000,
+        port: 3001,
         startCommand: 'next dev',
         installCommand: 'npm install',
         devCommand: 'npm run dev',
@@ -44,7 +45,7 @@ const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
     react: {
         name: 'react',
         displayName: 'React',
-        port: 3000,
+        port: 3001,
         startCommand: 'react-scripts start',
         installCommand: 'npm install',
         devCommand: 'npm start'
@@ -68,7 +69,7 @@ const FRAMEWORK_CONFIGS: Record<string, FrameworkConfig> = {
     remix: {
         name: 'remix',
         displayName: 'Remix',
-        port: 3000,
+        port: 3001,
         startCommand: 'remix dev',
         installCommand: 'npm install',
         devCommand: 'npm run dev'
@@ -97,7 +98,7 @@ export function Terminal({ fileData, onServerReady, template }: TerminalProps) {
     useEffect(() => {
         initializeTerminal();
         return () => cleanup();
-    }, []);
+    }, [window.location.href]);
 
     // Update theme when it changes
     useEffect(() => {
