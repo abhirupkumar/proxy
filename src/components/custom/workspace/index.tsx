@@ -441,6 +441,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                     <Button title='slide' size='icon' variant={'link'} className='' onClick={() => changePanel("code")}><ChevronsRight /></Button>
                                     <TabsList className="my-2 mx-4 rounded-full">
                                         <TabsTrigger value="code" className="text-sm rounded-full">Code</TabsTrigger>
+                                        <TabsTrigger value="terminal" className="text-sm rounded-full">Terminal</TabsTrigger>
                                         <TabsTrigger value="preview" className="text-sm rounded-full">Preview</TabsTrigger>
                                     </TabsList>
                                     <div className='flex ml-auto' suppressHydrationWarning>

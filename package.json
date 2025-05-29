@@ -54,6 +54,9 @@
     "@uiw/react-codemirror": "^4.23.10",
     "@uiw/react-textarea-code-editor": "^3.1.0",
     "@webcontainer/api": "^1.5.1-internal.9",
+    "@xterm/addon-fit": "^0.10.0",
+    "@xterm/addon-unicode11": "^0.8.0",
+    "@xterm/addon-web-links": "^0.11.0",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
     "class-variance-authority": "^0.7.1",
@@ -105,7 +108,7 @@
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.12",
     "@types/mime-types": "^2.1.4",
-    "@types/node": "^20",
+    "@types/node": "^20.17.51",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "open-next": "^3.1.3",
