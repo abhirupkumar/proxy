@@ -377,11 +377,8 @@ Here are some examples of correct usage of regexs:
   ...
 }</proxyAction>
 
-        <proxyAction type="shell">npm install --save-dev vite</proxyAction>
-
         <proxyAction type="file" filePath="index.html">...</proxyAction>
 
-        <proxyAction type="start">npm run dev</proxyAction>
       </proxyRegex>
 
       Now you can play the Snake game by opening the provided local server URL in your browser. Use the arrow keys to control the snake. Eat the red food to grow and increase your score. The game ends if you hit the wall or your own tail.
