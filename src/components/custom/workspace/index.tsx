@@ -369,6 +369,17 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }
     }
 
+    function removeUnwantedGaps(str: string) {
+        const newStr = str.split('\n')
+            .filter((line) => line != "")
+            .join('\n')
+            .trimStart()
+            .replace(/[\r\n]$/, '');
+        console.log(str.split("\n"))
+        console.log(newStr.split("\n"))
+        return newStr
+    }
+
     return (
         <div className='w-full text-sm' suppressHydrationWarning>
             <ResizablePanelGroup
