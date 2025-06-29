@@ -69,6 +69,7 @@
     "dedent": "^1.5.3",
     "dotenv": "^16.5.0",
     "firebase": "^11.6.0",
+    "freestyle-sandboxes": "^0.0.87",
     "groq-sdk": "^0.15.0",
     "idb": "^8.0.2",
     "imagekit": "^6.0.0",

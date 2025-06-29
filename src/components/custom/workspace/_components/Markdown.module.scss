@@ -103,7 +103,6 @@ $code-font-size: 13px;
     ul {
         @include not-inside-actions {
             list-style-type: disc;
-            margin-block: -50px;
         }
     }
 

@@ -415,7 +415,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                             ))}
                                         </div>}
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
-                                    <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto" : ""}`}>
+                                    <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
                                         {loading == true && message?.role == 'assistant' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="whitespace-pre-wrap">
                                             <ReactMarkdown
