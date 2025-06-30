@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
 
         const files = workspace.fileData;
         const extraFiles = Object.entries(files!).map(([filepath, { code }]) => `  -  ${filepath}`);
-        const prompts = [BASE_PROMPT, `You are required to write the code in react. Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${extraFiles}`]
+        const prompts = [`Consider the contents of ALL files in the project.\n\n${JSON.stringify(files)}\n\nHere is a list of files that exist on the file system but are not being shown to you:\n\n  ${extraFiles}`]
         const llmPrompt = prompts.map(content => ({
             role: "user",
             parts: [{ text: content }]
