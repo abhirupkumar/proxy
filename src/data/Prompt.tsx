@@ -23,29 +23,32 @@ Not every interaction requires code changes - you're happy to discuss, explain c
   - Only Next.js or Remix project. No framework is avaliable.
   - Databases: prefer libsql, sqlite, or non-native solutions
 </system_constraints>
-
-<database_instructions>
+${supabase?.isConnected &&
+    supabase?.hasSelectedProject &&
+    supabase?.credentials?.supabaseUrl &&
+    supabase?.credentials?.anonKey ?
+    `<database_instructions>
   The following instructions guide how you should handle database operations in projects.
 
   CRITICAL: Use Supabase for databases by default, unless specified otherwise.
 
   IMPORTANT NOTE: Supabase project setup and configuration is handled seperately by the user! ${supabase
-    ? !supabase.isConnected
-      ? 'You are not connected to Supabase. Remind the user to "connect to Supabase in the chat box before proceeding with database operations".'
-      : !supabase.hasSelectedProject
-        ? 'Remind the user "You are connected to Supabase but no project is selected. Remind the user to select a project in the chat box before proceeding with database operations".'
-        : ''
-    : ''
-  } 
+      ? !supabase.isConnected
+        ? 'You are not connected to Supabase. Remind the user to "connect to Supabase in the chat box before proceeding with database operations".'
+        : !supabase.hasSelectedProject
+          ? 'Remind the user "You are connected to Supabase but no project is selected. Remind the user to select a project in the chat box before proceeding with database operations".'
+          : ''
+      : ''
+    } 
     IMPORTANT: Create a .env file if it doesnt exist and include the following variables:
   ${supabase?.isConnected &&
-    supabase?.hasSelectedProject &&
-    supabase?.credentials?.supabaseUrl &&
-    supabase?.credentials?.anonKey
-    ? `${!template ? "VITE" : template == "react" ? "REACT_APP" : template == "nextjs" ? "NEXT_PUBLIC" : "VITE"}_SUPABASE_URL=${supabase.credentials.supabaseUrl}
+      supabase?.hasSelectedProject &&
+      supabase?.credentials?.supabaseUrl &&
+      supabase?.credentials?.anonKey
+      ? `${!template ? "VITE" : template == "react" ? "REACT_APP" : template == "nextjs" ? "NEXT_PUBLIC" : "VITE"}_SUPABASE_URL=${supabase.credentials.supabaseUrl}
       ${!template ? "VITE" : template == "react" ? "REACT_APP" : template == "nextjs" ? "NEXT_PUBLIC" : "VITE"}_SUPABASE_ANON_KEY=${supabase.credentials.anonKey}`
-    : 'SUPABASE_URL=your_supabase_url\nSUPABASE_ANON_KEY=your_supabase_anon_key'
-  }
+      : 'SUPABASE_URL=your_supabase_url\nSUPABASE_ANON_KEY=your_supabase_anon_key'
+    }
   NEVER modify any Supabase configuration or \`.env\` files apart from creating the \`.env\`.
 
   Do not try to generate types for supabase.
@@ -220,10 +223,7 @@ Not every interaction requires code changes - you're happy to discuss, explain c
 
   IMPORTANT: NEVER skip RLS setup for any table. Security is non-negotiable!
 </database_instructions>
-
-<code_formatting_info>
-  Use 2 spaces for code indentation
-</code_formatting_info>
+` : ""}
 
 <message_formatting_info>
   You can make the output pretty by using only the following available HTML elements: ${allowedHTMLElements.map((tagName) => `<${tagName}>`).join(', ')}

@@ -1,5 +1,5 @@
 import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
+import { getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
 import { FunctionCallingMode, SchemaType, Tool } from '@google/generative-ai';
