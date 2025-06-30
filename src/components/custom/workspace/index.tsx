@@ -182,7 +182,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
 
     useEffect(() => {
         if (!loading && messages?.length > 0) {
-            if (messages[messages?.length - 1].role == "assistant") {
+            if (messages[messages?.length - 1].role == "model") {
                 const msg = messages[messages?.length - 1].content;
                 if (msg.trim().length < 6) {
                     let nmsg = messages;
@@ -218,7 +218,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             const db = await getIndexedDB();
             await db.put('messages', {
                 id: messageId,
-                role: 'assistant',
+                role: 'model',
                 content: content,
                 workspaceId,
                 createdAt: Date.now(),
@@ -230,7 +230,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
             try {
-                await onMessagesUpdate(messageId, 'assistant', content, workspace.id, "");
+                await onMessagesUpdate(messageId, 'model', content, workspace.id, "");
             } catch (err) {
                 console.error('Failed saving to server:', err);
             }
@@ -266,7 +266,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }
 
         let newMessages = messages;
-        newMessages.push({ role: 'assistant', content: msg });
+        newMessages.push({ role: 'model', content: msg });
 
         setMessages(newMessages);
 
@@ -303,9 +303,9 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 } else {
                     msg += stripIndents(parsedText.trim());
                 }
-                // onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
+                // onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
                 newMessages.pop();
-                newMessages.push({ role: 'assistant', content: msg });
+                newMessages.push({ role: 'model', content: msg });
                 setMessages(newMessages);
                 // save partial to IndexedDB
                 debouncedSaveToIndexedDB(messageId, workspace.id, msg);
@@ -320,12 +320,12 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         // router.refresh();
         await indexedDB.put('messages', {
             id: messageId,
-            role: 'assistant',
+            role: 'model',
             content: msg,
             workspaceId: workspace.id,
             createdAt: Date.now(),
         });
-        await onMessagesUpdate(messageId, 'assistant', msg, workspace.id, "");
+        await onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
         await indexedDB.delete('messages', messageId);
         setNewAiMessage("");
         setLoading(false);
@@ -416,7 +416,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                         </div>}
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
                                     <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
-                                        {loading == true && message?.role == 'assistant' && <Loader2 className='h-4 w-4 animate-spin' />}
+                                        {loading == true && message?.role == 'model' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="whitespace-pre-wrap">
                                             <ReactMarkdown
                                                 allowedElements={allowedHTMLElements}

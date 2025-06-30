@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 
 export interface Message {
-    role: 'user' | "assistant",
+    role: 'user' | "model",
     content: string,
     url?: string | null | undefined,
     photoUrls?: string[]
