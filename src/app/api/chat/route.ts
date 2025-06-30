@@ -1,4 +1,4 @@
-import { BASE_PROMPT, getSystemPrompt } from '@/data/Prompt';
+import { getSystemPrompt } from '@/data/Prompt';
 import { gemini } from '@/lib/gemini';
 import { getWorkspace } from '@/lib/queries';
 import { currentUser, verifyToken } from '@clerk/nextjs/server';
