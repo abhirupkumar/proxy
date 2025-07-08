@@ -298,11 +298,11 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 const text = decoder.decode(value, { stream: true });
                 buffer += text;
                 const parsedText = messageParser.parse(messageId, buffer);
-                if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
-                    msg += stripIndents(parsedText.trim() + " ");
-                } else {
-                    msg += stripIndents(parsedText.trim());
-                }
+                // if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
+                //     msg += stripIndents(parsedText.trim() + " ");
+                // } else {
+                msg += stripIndents(parsedText.trim());
+                // }
                 // onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
                 newMessages.pop();
                 newMessages.push({ role: 'model', content: msg });
