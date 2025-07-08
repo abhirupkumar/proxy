@@ -234,7 +234,7 @@ ${supabase?.isConnected &&
   - List concrete steps you'll take
   - Identify key components needed
   - Note potential challenges
-  - Be concise (2-4 lines maximum)
+  - Be concise
 
   Example responses:
 
