@@ -156,7 +156,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                     if (newFileContent.endsWith("```")) {
                         newFileContent = newFileContent.slice(0, -3);
                     }
-                    newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
+                    // newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
 
                     setFiles((prevFiles) => {
                         const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
