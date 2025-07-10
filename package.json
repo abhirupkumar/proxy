@@ -73,6 +73,7 @@
     "groq-sdk": "^0.15.0",
     "idb": "^8.0.2",
     "imagekit": "^6.0.0",
+    "inngest": "^3.40.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.475.0",
     "markdown-to-text": "^0.1.1",
