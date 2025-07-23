@@ -11,7 +11,11 @@ import OpenAI from "openai";
 //     apiKey: "ddc-a4f-bcd8c66bdf03465f9f2f0db77a233f5c",
 // })
 
+// export const openai = new OpenAI({
+//     baseURL: "https://openrouter.ai/api/v1",
+//     apiKey: "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",
+// })
+
 export const openai = new OpenAI({
-    baseURL: "https://openrouter.ai/api/v1",
-    apiKey: "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",
+    apiKey: process.env.OPENAI_API_KEY,
 })
