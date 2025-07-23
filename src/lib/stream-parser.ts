@@ -1,4 +1,4 @@
-import { ActionType, FileAction, ProxyAction, ProxyActionData, ProxyRegexData, ShellAction } from "./types";
+import { ActionType, DeleteAction, FileAction, ProxyAction, ProxyActionData, ProxyRegexData, RenameAction, ShellAction, SupabaseAction } from "./types";
 
 
 const REGEX_TAG_OPEN = '<proxyRegex';
@@ -33,6 +33,7 @@ export interface ParserCallbacks {
     onRegexOpen?: RegexCallback;
     onRegexClose?: RegexCallback;
     onActionOpen?: ActionCallback;
+    onActionStream?: ActionCallback;
     onActionClose?: ActionCallback;
 }
 
@@ -45,6 +46,23 @@ type ElementFactory = (props: ElementFactoryProps) => string;
 export interface StreamingMessageParserOptions {
     callbacks?: ParserCallbacks;
     regexElement?: ElementFactory;
+}
+
+function cleanoutMarkdownSyntax(content: string) {
+    const codeBlockRegex = /^\s*```\w*\n([\s\S]*?)\n\s*```\s*$/;
+    const match = content.match(codeBlockRegex);
+
+    // console.log('matching', !!match, content);
+
+    if (match) {
+        return match[1]; // Remove common leading 4-space indent
+    } else {
+        return content;
+    }
+}
+
+function cleanEscapedTags(content: string) {
+    return content.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
 }
 
 export class StreamingMessageParser {
@@ -90,6 +108,10 @@ export class StreamingMessageParser {
                         let content = currentAction.content.trim();
 
                         if ('type' in currentAction && currentAction.type === 'file') {
+                            if (!currentAction.filePath.endsWith('.md')) {
+                                content = cleanoutMarkdownSyntax(content);
+                                content = cleanEscapedTags(content);
+                            }
                             content += '\n';
                         }
 
@@ -244,15 +266,58 @@ export class StreamingMessageParser {
             content: '',
         };
 
-        if (actionType === 'file') {
-            const filePath = this.#extractAttribute(actionTag, 'filePath') as string;
+        if (actionType === 'supabase') {
+            const operation = this.#extractAttribute(actionTag, 'operation');
 
+            if (!operation || !['migration', 'query'].includes(operation)) {
+                console.warn(`Invalid or missing operation for Supabase action: ${operation}`);
+                throw new Error(`Invalid Supabase operation: ${operation}`);
+            }
+
+            (actionAttributes as SupabaseAction).operation = operation as 'migration' | 'query';
+
+            if (operation === 'migration') {
+                const filePath = this.#extractAttribute(actionTag, 'filePath');
+
+                if (!filePath) {
+                    console.warn('Migration requires a filePath');
+                    throw new Error('Migration requires a filePath');
+                }
+
+                (actionAttributes as SupabaseAction).filePath = filePath;
+            }
+        } else if (actionType === 'delete') {
+            const filePath = this.#extractAttribute(actionTag, 'filePath');
             if (!filePath) {
-                //   console.debug('File path not specified');
+                console.warn('Delete action requires a filePath');
+                throw new Error('Delete action requires a filePath');
+            }
+
+            (actionAttributes as DeleteAction).filePath = filePath;
+        } else if (actionType === 'rename') {
+            const filePath = this.#extractAttribute(actionTag, 'filePath');
+            const newFilePath = this.#extractAttribute(actionTag, 'newFilePath');
+            if (!filePath) {
+                console.warn('Rename action requires a filePath');
+                throw new Error('Rename action requires a filePath');
+            }
+            if (!newFilePath) {
+                console.warn('Rename action requires a newFilePath');
+                throw new Error('Rename action requires a newFilePath');
+            }
+
+            (actionAttributes as RenameAction).filePath = filePath;
+            (actionAttributes as RenameAction).newFilePath = newFilePath;
+        } else if (actionType === 'file') {
+            const filePath = this.#extractAttribute(actionTag, 'filePath') as string;
+            const diffMode = this.#extractAttribute(actionTag, 'diffMode') as string;
+            if (!filePath) {
+                console.warn('FilePath not found!');
+                throw new Error('FilePath not found!');
             }
 
             (actionAttributes as FileAction).filePath = filePath;
-        } else if (actionType !== 'shell') {
+        } else if (!['shell', 'start'].includes(actionType)) {
             console.warn(`Unknown action type '${actionType}'`);
         }
 
@@ -264,18 +329,3 @@ export class StreamingMessageParser {
         return match ? match[1] : undefined;
     }
 }
-
-// const createRegexElement: ElementFactory = (props) => {
-//     const elementProps = [
-//         'class="__proxyRegex__"',
-//         ...Object.entries(props).map(([key, value]) => {
-//             return `data-${camelToDashCase(key)}=${JSON.stringify(value)}`;
-//         }),
-//     ];
-
-//     return `<div ${elementProps.join(' ')}></div>`;
-// };
-
-// function camelToDashCase(input: string) {
-//     return input.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-// }

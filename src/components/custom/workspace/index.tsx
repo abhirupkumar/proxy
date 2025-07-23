@@ -148,6 +148,21 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                     const filePath = data.action.filePath
                     setAction(`Editing ${filePath}`)
                 }
+                if (data.action.type == "shell") {
+                    setAction(`Running shell command: ${data.action.content}`);
+                }
+                if (data.action.type == "start") {
+                    setAction(`Starting development server`);
+                }
+                if (data.action.type == "rename") {
+                    setAction(`Renaming file from ${data.action.filePath} to ${data.action.newFilePath}`);
+                }
+                if (data.action.type == "delete") {
+                    setAction(`Deleting file ${data.action.filePath}`);
+                }
+                if (data.action.type == "supabase") {
+                    setAction(`Running Supabase action: ${data.action.operation}`);
+                }
             },
             onActionClose: (data) => {
                 if (data.action.type == "file") {
@@ -166,6 +181,50 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                     handleFileSelect(filePath);
                     setIsFilesUpdated(true);
                     setAction("");
+                }
+                if (data.action.type == "shell") {
+                    setAction(`Running shell command: ${data.action.content}`);
+                }
+                if (data.action.type == "start") {
+                    setAction(`Starting development server`);
+                }
+                if (data.action.type == "rename") {
+                    const oldFilePath = data.action.filePath;
+                    const newFilePath = data.action.newFilePath;
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles };
+                        if (updatedFiles[oldFilePath]) {
+                            updatedFiles[newFilePath] = updatedFiles[oldFilePath];
+                            delete updatedFiles[oldFilePath];
+                        }
+                        return updatedFiles;
+                    });
+                    setIsFilesUpdated(true);
+                    setAction(`Renamed file from ${data.action.filePath} to ${data.action.newFilePath}`);
+                }
+                if (data.action.type == "delete") {
+                    const filePath = data.action.filePath;
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles };
+                        delete updatedFiles[filePath];
+                        return updatedFiles;
+                    });
+                    setIsFilesUpdated(true);
+                    setAction(`Deleted file: ${data.action.filePath}`);
+                }
+                if (data.action.type == "supabase") {
+                    if (data.action.operation == "migration") {
+                        const filePath = data.action.filePath as string;
+                        setFiles((prevFiles) => {
+                            const updatedFiles = { ...prevFiles, [filePath]: { code: data.action.content } };
+                            return updatedFiles;
+                        });
+                        setIsFilesUpdated(true);
+                        setAction(`Created Supabase Migration File: ${data.action.operation}`);
+                    }
+                    if (data.action.operation == "query") {
+                        setAction(`Ran Supabase action: ${data.action.operation}`);
+                    }
                 }
             }
 
@@ -309,7 +368,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 setMessages(newMessages);
                 // save partial to IndexedDB
                 debouncedSaveToIndexedDB(messageId, workspace.id, msg);
-
                 // save partial to server (optional, for recovery)
                 debouncedSaveToServer(messageId, workspace.id, msg);
             }

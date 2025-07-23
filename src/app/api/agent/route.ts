@@ -1,57 +1,62 @@
-import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import { getSystemPrompt } from '@/data/Prompt';
-import { gemini } from '@/lib/gemini';
-import { currentUser, verifyToken } from '@clerk/nextjs/server';
-import { FunctionCallingMode, SchemaType, Tool } from '@google/generative-ai';
+import { agentTools } from '@/data/functions-schema';
+import { newPrompt } from '@/data/NewPrompt';
+import { genAI } from '@/lib/gemini';
+import { FunctionCallingMode, GenerativeModel } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
-
-interface Message {
-    "role": "user" | "assistant",
-    "parts": [{ "text": string }]
-}
-
 export async function POST(req: NextRequest) {
-    const user = await currentUser();
-    if (!user)
-        return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
 
-    const { messages, tool } = await req.json() as { messages: any, tool: any };
+    if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ status: 404 });
+    }
 
-    try {
+    const { history } = await req.json();
 
-        const result = await gemini.generateContent({
-            contents: messages,
-            generationConfig: {
-                temperature: 0.5,
-                topP: 0.8,
-            },
-            systemInstruction: {
-                role: "system",
-                parts: [{ text: getSystemPrompt() }]
-            },
-            tools: [
-                {
-                    functionDeclarations: [
-                        tool
-                    ]
-                }
-            ],
-            toolConfig: {
-                functionCallingConfig: {
-                    mode: FunctionCallingMode.ANY
+    const tools = [{
+        functionDeclarations: agentTools
+    }];
+
+    const model: GenerativeModel = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        systemInstruction: newPrompt,
+        tools: tools,
+        // toolConfig: {
+        //     functionCallingConfig: {
+        //         mode: FunctionCallingMode.ANY
+        //     }
+        // }
+    });
+
+    const result = await model.generateContentStream({
+        contents: [...history],
+    });
+
+    const stream = new ReadableStream({
+        async start(controller) {
+            for await (const chunk of result.stream) {
+                try {
+                    if (chunk.candidates && chunk.candidates.length > 0) {
+                        const candidate = chunk.candidates[0];
+                        if (candidate.content && candidate.content.parts) {
+                            for (const part of candidate.content.parts) {
+                                console.log("Chunk received:", part);
+                                controller.enqueue(new TextEncoder().encode(JSON.stringify(part)));
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error parsing chunk:", error);
                 }
             }
-        });
+            controller.close();
+        }
+    });
 
-        const answer = result.response;
-        console.log(answer);
-
-        return NextResponse.json({ response: answer }, { status: 200 });
-
-    } catch (error: any) {
-        console.log(error);
-        return NextResponse.json({ error: error }, { status: 500 });
-    }
+    return new NextResponse(stream, {
+        headers: {
+            "Content-Type": "application/json",
+            "Transfer-Encoding": "chunked"
+        }
+    });
 }
 
 export const runtime = "edge";

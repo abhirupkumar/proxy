@@ -8,3 +8,12 @@ export const helloWorld = inngest.createFunction(
         return { message: `Hello ${event.data.email}!` };
     },
 );
+
+export const coder = inngest.createFunction(
+    { id: "coding-agent" },
+    { event: "test/coding.agent" },
+    async ({ event, step }) => {
+
+        return { message: `Hello ${event.data.email}!` };
+    },
+);
