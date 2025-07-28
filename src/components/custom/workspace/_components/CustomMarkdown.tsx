@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { ClipboardCopy } from 'lucide-react';
-import styles from './CodeBlock.module.css';
+import styles from './Codeblock.module.css';
 
 // Interface for CodeBlock props
 interface CodeBlockProps {
