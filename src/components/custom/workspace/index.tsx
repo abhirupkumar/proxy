@@ -144,9 +144,17 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 setAction("");
             },
             onActionOpen: (data) => {
+
+            },
+            onActionStream: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
+                    let newFileContent = data.action.content;
                     setAction(`Editing ${filePath}`)
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
+                        return updatedFiles;
+                    });
                 }
                 if (data.action.type == "shell") {
                     setAction(`Running shell command: ${data.action.content}`);
@@ -168,11 +176,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath;
                     let newFileContent = data.action.content;
-                    if (newFileContent.endsWith("```")) {
-                        newFileContent = newFileContent.slice(0, -3);
-                    }
-                    // newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
-
                     setFiles((prevFiles) => {
                         const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
 

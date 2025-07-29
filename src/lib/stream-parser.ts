@@ -136,6 +136,25 @@ export class StreamingMessageParser {
 
                         i = closeIndex + REGEX_ACTION_TAG_CLOSE.length;
                     } else {
+                        if ('type' in currentAction && currentAction.type === 'file') {
+                            let content = input.slice(i);
+
+                            if (!currentAction.filePath.endsWith('.md')) {
+                                content = cleanoutMarkdownSyntax(content);
+                                content = cleanEscapedTags(content);
+                            }
+
+                            this._options.callbacks?.onActionStream?.({
+                                regexId: currentRegex.id,
+                                messageId,
+                                actionId: String(state.actionId - 1),
+                                action: {
+                                    ...(currentAction as FileAction),
+                                    content,
+                                    filePath: currentAction.filePath,
+                                },
+                            });
+                        }
                         break;
                     }
                 } else {
