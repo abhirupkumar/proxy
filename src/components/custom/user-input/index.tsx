@@ -27,7 +27,7 @@ type ImageItem = {
     error?: string;
 };
 
-const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
+const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, stop?: () => void, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
     const { resolvedTheme } = useTheme();
     const [open, setOpen] = useState<boolean>(false);
@@ -125,10 +125,14 @@ const UserInput = ({ disabled, controller, onGenerate, loading, setLoading, user
     };
 
     const handleAbort = () => {
-        if (controller) {
-            controller.abort();
+        if (!!stop) {
+            stop();
             setLoading(false);
         }
+        // if (controller) {
+        //     controller.abort();
+        //     setLoading(false);
+        // }
     }
 
     useEffect(() => {

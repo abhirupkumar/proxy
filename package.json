@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^2.0.0",
+    "@ai-sdk/react": "^2.0.0",
     "@clerk/nextjs": "^6.9.1",
     "@clerk/themes": "^2.2.1",
     "@codemirror/lang-json": "^6.0.1",
@@ -30,7 +31,7 @@
     "@google/generative-ai": "^0.24.0",
     "@inngest/agent-kit": "^0.9.0",
     "@monaco-editor/react": "^4.7.0",
-    "@nanostores/react": "^1.0.0",
+    "@nanostores/react": "github:ai/react",
     "@octokit/rest": "^21.1.1",
     "@opennextjs/cloudflare": "^1.0.2",
     "@prisma/adapter-pg": "^6.8.1",
