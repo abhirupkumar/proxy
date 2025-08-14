@@ -61,8 +61,6 @@ type initialSupabaseDataProp = {
 const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any, workspace: any, initialSupabaseData: initialSupabaseDataProp }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
-    const [title, setTitle] = useState<string>("")
-    const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
@@ -77,7 +75,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     const { resolvedTheme } = useTheme();
     const [iconLoading, setIconLoading] = useState(false);
     const isMobile = useIsMobile();
-    const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, setWorkspaceData } = useWorkspaceData();
+    const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, workspaceData, setWorkspaceData } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast()
     const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
@@ -121,10 +119,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     }, [isMobile]);
 
     useEffect(() => {
-        console.log(panels)
-    }, [panels]);
-
-    useEffect(() => {
         setConnection({
             token: initialSupabaseData?.supabaseToken || null,
             isConnected: !!(initialSupabaseData?.supabaseToken)
@@ -157,8 +151,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setIsPrivate(workspace.isPrivate);
         setIsChangesPushed(workspace.isChangesPushed)
         setFiles(workspace.fileData);
-        setTitle(workspace.title);
-        setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
 
@@ -169,14 +161,14 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
 
     const handleDownload = async () => {
         const zip = new JSZip();
-        const projectFolder = zip.folder(artifactId);
+        const projectFolder = zip.folder(workspaceData.artifactId);
         Object.entries(files!).forEach(([filename, { code }]) => {
             projectFolder?.file(filename, code);
         });
         const content = await zip.generateAsync({ type: 'blob' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
-        link.download = artifactId + ".zip";
+        link.download = workspaceData.artifactId + ".zip";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -188,10 +180,13 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 setAction("Generating Response");
             },
             onRegexClose: (data) => {
-                if (artifactId == "proxy-web-app") {
-                    setArtifactId(data.id);
-                    setTitle(data.title)
+                if (workspaceData.artifactId == "proxy-web-app") {
                     onIdAndTitleUpdate(workspace.id, data.title, data.id);
+                    setWorkspaceData({
+                        ...workspaceData,
+                        title: data.title,
+                        artifactId: data.id
+                    })
                 }
                 setAction("");
             },
@@ -501,7 +496,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 {panels.chat && <ResizablePanel defaultSize={37} minSize={25}>
                     <div className='relative h-[100vh] flex flex-col p-2 items-center'>
                         <div className='w-full mr-auto ml-1.5 mb-2 flex justify-between items-center'>
-                            <WorkspaceDropdown title={title} />
+                            <WorkspaceDropdown title={workspaceData.title} />
                             <span className='flex' suppressHydrationWarning>
                                 <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
                                 {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
@@ -572,7 +567,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                             isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
                                             repoUrl={workspace.githubRepo?.repoUrl ?? ""}
                                             hasUnpushedChanges={!isChangesPushed}
-                                            workspaceTitle={title}
+                                            workspaceTitle={workspaceData.title}
                                         /> : <Skeleton className='w-6 h-6 rounded-full' />)}
 
                                         <Button title='Export' variant="link" size='icon' className='mr-4' onClick={handleDownload}>

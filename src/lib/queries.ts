@@ -254,16 +254,28 @@ export async function onShellCommand(shellCommand: string) {
     }
 }
 
-export async function onIdAndTitleUpdate(id: string, title: string, artifactId: string) {
-    await db.workspace.update({
-        where: {
-            id: id,
-        },
-        data: {
-            title: title,
-            artifactId: artifactId
-        }
-    })
+export async function onIdAndTitleUpdate(id: string, title: string, artifactId?: string) {
+    if (artifactId) {
+        await db.workspace.update({
+            where: {
+                id: id,
+            },
+            data: {
+                title: title,
+                artifactId: artifactId
+            }
+        })
+    }
+    else {
+        await db.workspace.update({
+            where: {
+                id: id,
+            },
+            data: {
+                title: title
+            }
+        })
+    }
 }
 
 export const changePrivateWorkspace = async (id: string, isPrivate: boolean) => {
