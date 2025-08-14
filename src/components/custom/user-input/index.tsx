@@ -30,7 +30,6 @@ type ImageItem = {
 const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading, userInput, setUserInput, scrapeUrl, setScrapeUrl, images, setImages }: { disabled?: boolean, stop?: () => void, controller?: AbortController, onGenerate: (input: string) => void, loading: boolean, setLoading: Dispatch<SetStateAction<boolean>>, userInput: string | null | undefined, setUserInput: Dispatch<SetStateAction<string | null | undefined>>, scrapeUrl: string, setScrapeUrl: Dispatch<SetStateAction<string>>, images: ImageItem[], setImages: Dispatch<SetStateAction<ImageItem[]>> }) => {
 
     const { resolvedTheme } = useTheme();
-    const [open, setOpen] = useState<boolean>(false);
     const { isLoaded, isSignedIn } = useAuth();
     const pathname = usePathname();
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -143,7 +142,7 @@ const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading
     }, [userInput]);
 
     return (
-        <div className='p-4 border rounded-2xl max-w-4xl w-full mt-4 bg-secondary shadow-lg relative transition-all duration-300 ease-in-out'>
+        <div className='p-2 border rounded-2xl max-w-4xl w-full mt-4 bg-secondary shadow-lg relative transition-all duration-300 ease-in-out'>
             <GlowingEffect
                 spread={40}
                 glow={true}
@@ -177,19 +176,6 @@ const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading
                         ))}
                     </div>
                 )}
-                {open && (
-                    <div className="flex items-center gap-2">
-                        <Input
-                            className='text-sm flex-grow'
-                            type="url"
-                            placeholder="https://example.com"
-                            value={scrapeUrl}
-                            onKeyDown={(e) => { if (e.key === 'Enter' && scrapeUrl) setOpen(false); }}
-                            onChange={(e) => setScrapeUrl(e.target.value)}
-                        />
-                        <Button variant="ghost" size="icon" onClick={() => setOpen(false)}><XIcon className="h-4 w-4" /></Button>
-                    </div>
-                )}
                 <div className='flex items-start gap-2'>
                     <textarea
                         ref={textareaRef}
@@ -215,12 +201,12 @@ const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading
             </div>
             {!disabled && (
                 <div className='flex items-center justify-between'>
-                    <div className="flex items-center gap-x-4">
+                    <div className="flex items-center gap-x-4 ml-2">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <label htmlFor="dropzone-file" className="flex items-center gap-1 cursor-pointer transition-colors">
                                     <ImagePlusIcon className='h-4 w-4' />
-                                    <span className="text-sm font-medium">Attach</span>
+                                    <span className="text-sm font-medium sr-only">Attach</span>
                                 </label>
                             </TooltipTrigger>
                             <TooltipContent>Upload Image</TooltipContent>
@@ -235,18 +221,9 @@ const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading
                             ref={fileInputRef}
                             onChange={handleImageUpload}
                         />
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button onClick={() => setOpen(!open)} className="flex items-center gap-1 cursor-pointer transition-colors">
-                                    <Link2 className='h-4 w-4' />
-                                    <span className="text-sm font-medium">Clone</span>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipContent>Add Link</TooltipContent>
-                        </Tooltip>
                         {pathname === "/" && (
                             <Select value={template} onValueChange={setTemplate}>
-                                <SelectTrigger className="w-auto px-3 py-1 h-auto text-sm">
+                                <SelectTrigger className="w-auto p-0 h-auto text-sm">
                                     <SelectValue placeholder="Select a Template" />
                                 </SelectTrigger>
                                 <SelectContent>

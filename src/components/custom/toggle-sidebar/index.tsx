@@ -1,14 +1,12 @@
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { SidebarIcon } from 'lucide-react';
-import { usePathname } from 'next/navigation';
 
 const ToggleSidebar = () => {
-  const pathname = usePathname();
   const { toggleSidebar, state } = useSidebar();
   const isCollapsed = state === 'collapsed';
   return (
-    <div className={`${pathname == "/" ? "mt-auto" : "mb-auto"} relative cursor-pointer m-2`}>
+    <div className={`mt-auto relative cursor-pointer m-2`}>
       <Button
         onClick={toggleSidebar}
         variant="ghost"

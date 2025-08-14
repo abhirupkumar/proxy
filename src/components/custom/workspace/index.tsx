@@ -11,7 +11,7 @@ import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } fr
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins, stripIndents } from '@/lib/utils';
 import JSZip from 'jszip';
-import { ArrowRight, ChevronRight, ChevronsLeft, ChevronsRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, Download, GitFork, Globe, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -40,7 +40,9 @@ import { env } from 'env';
 import { UIMessage, useChat } from "@ai-sdk/react"
 import { DataUIPart, DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls, ModelMessage } from 'ai';
 import { convertToUIMessages } from '@/lib/actions/ai';
-import { e } from 'node_modules/@inngest/agent-kit/dist/agent-Df6e3z3X';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import WorkspaceDropdown from '../workspace-dropdown';
 
 type ImageItem = {
     id: string;
@@ -74,7 +76,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const [iconLoading, setIconLoading] = useState(false);
-
+    const isMobile = useIsMobile();
     const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, setWorkspaceData } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast()
@@ -111,6 +113,16 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     //     },
     //     messages: initialMessages
     // });
+
+    useEffect(() => {
+        if (isMobile) {
+            setPanels({ chat: true, code: false });
+        }
+    }, [isMobile]);
+
+    useEffect(() => {
+        console.log(panels)
+    }, [panels]);
 
     useEffect(() => {
         setConnection({
@@ -464,7 +476,8 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             }
         }
         else {
-            setPanels({ chat: true, code: true });
+            if (isMobile) setPanels({ chat: !panels.chat, code: !panels.code });
+            else setPanels({ chat: true, code: true });
         }
     }
 
@@ -486,9 +499,9 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 className="max-w-full border-t md:min-w-[450px]"
             >
                 {panels.chat && <ResizablePanel defaultSize={37} minSize={25}>
-                    <div className='relative h-[100vh] flex flex-col p-3 pt-2 items-center'>
-                        <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
-                            <h2>{title != "" ? title : "New Chat"}</h2>
+                    <div className='relative h-[100vh] flex flex-col p-2 items-center'>
+                        <div className='w-full mr-auto ml-1.5 mb-2 flex justify-between items-center'>
+                            <WorkspaceDropdown title={title} />
                             <span className='flex' suppressHydrationWarning>
                                 <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
                                 {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}

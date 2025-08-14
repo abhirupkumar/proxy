@@ -37,9 +37,6 @@ const AppSidebar = () => {
             <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <SidebarFooterComponent />
             </SidebarFooter>
-            <SidebarRail>
-                <ToggleSidebar />
-            </SidebarRail>
         </Sidebar>
     )
 }
