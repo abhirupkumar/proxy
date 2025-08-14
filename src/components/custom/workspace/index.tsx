@@ -41,7 +41,6 @@ import { UIMessage, useChat } from "@ai-sdk/react"
 import { DataUIPart, DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls, ModelMessage } from 'ai';
 import { convertToUIMessages } from '@/lib/actions/ai';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuPortal, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import WorkspaceDropdown from '../workspace-dropdown';
 
 type ImageItem = {
@@ -482,8 +481,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             .join('\n')
             .trimStart()
             .replace(/[\r\n]$/, '');
-        console.log(str.split("\n"))
-        console.log(newStr.split("\n"))
         return newStr
     }
 
@@ -496,7 +493,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 {panels.chat && <ResizablePanel defaultSize={37} minSize={25}>
                     <div className='relative h-[100vh] flex flex-col p-2 items-center'>
                         <div className='w-full mr-auto ml-1.5 mb-2 flex justify-between items-center'>
-                            <WorkspaceDropdown title={workspaceData.title} />
+                            <WorkspaceDropdown />
                             <span className='flex' suppressHydrationWarning>
                                 <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
                                 {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
@@ -567,7 +564,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                             isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
                                             repoUrl={workspace.githubRepo?.repoUrl ?? ""}
                                             hasUnpushedChanges={!isChangesPushed}
-                                            workspaceTitle={workspaceData.title}
+                                            workspaceTitle={workspaceData.title ?? ""}
                                         /> : <Skeleton className='w-6 h-6 rounded-full' />)}
 
                                         <Button title='Export' variant="link" size='icon' className='mr-4' onClick={handleDownload}>

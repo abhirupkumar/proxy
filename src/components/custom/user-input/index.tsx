@@ -251,8 +251,8 @@ const UserInput = ({ disabled, stop, controller, onGenerate, loading, setLoading
                             <Button
                                 onClick={() => userInput && onGenerate(userInput)}
                                 disabled={!userInput?.trim()}
-                                size="icon"
-                                className="rounded-full"
+                                size="sm"
+                                className="rounded-full w-8"
                             >
                                 <ArrowUp className="h-5 w-5" />
                             </Button>

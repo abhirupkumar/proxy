@@ -17,17 +17,17 @@ import Modal from 'react-modal';
 import { Input } from '@/components/ui/input'
 import { toast } from '@/hooks/use-toast'
 
-const WorkspaceDropdown = ({ title }: { title: string }) => {
+const WorkspaceDropdown = () => {
   const { user, isLoaded, isSignedIn } = useUser();
   const { setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const { workspaceData, setWorkspaceData } = useWorkspaceData();
   const [isOpen, setIsOpen] = useState(false);
-  const [projectTitle, setProjectTitle] = useState(title);
+  const [projectTitle, setProjectTitle] = useState(workspaceData?.title ?? "New Chat");
 
   useEffect(() => {
-    setProjectTitle(title);
-  }, [title]);
+    setProjectTitle(workspaceData?.title ?? "New Chat");
+  }, [workspaceData]);
 
   const handleProjectSave = async () => {
     setLoading(true);
@@ -47,7 +47,7 @@ const WorkspaceDropdown = ({ title }: { title: string }) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant={"hover"} size='lg' className='px-1 gap-0 items-center justify-center'>
-            <h2>{title != "" ? title : "New Chat"}</h2>
+            <h2>{projectTitle ? projectTitle : "New Chat"}</h2>
             <Globe className='ml-1' />
             <ChevronDown />
           </Button>
