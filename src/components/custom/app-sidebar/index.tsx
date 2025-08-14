@@ -1,24 +1,32 @@
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarRail, useSidebar } from '@/components/ui/sidebar';
-import { MessageCircle, PanelsLeftBottom } from 'lucide-react';
+import { MessageCircle, PanelsLeftBottom, SidebarIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'
 import WorkspaceHistory from '../workspace-history';
-import ToggleSidebar from '../toggle-sidebar';
 import SidebarFooterComponent from '../SidebarFooterComponent';
 import { useTheme } from 'next-themes';
 
 const AppSidebar = () => {
     const { theme } = useTheme();
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, state } = useSidebar();
+    const isCollapsed = state === 'collapsed';
     return (
         <Sidebar collapsible="offcanvas" suppressHydrationWarning>
-            <SidebarHeader className='p-4'>
+            <SidebarHeader className='p-4 flex flex-row justify-between'>
                 <Link href="/">
                     {theme === 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={120} height={40} /> :
                         <Image src="/logo-white.svg" alt="Logo" width={120} height={40} />}
                 </Link>
+                <Button
+                    onClick={toggleSidebar}
+                    variant="ghost"
+                    size="icon"
+                    className="transition-transform duration-300 ease-in-out"
+                >
+                    <SidebarIcon className={`w-5 h-5 transform ${isCollapsed ? 'rotate-180' : ''}`} />
+                </Button>
             </SidebarHeader>
             <SidebarContent className='p-4 space-y-4'>
                 <Link href='/' onClick={toggleSidebar} className={`${buttonVariants({})} w-full justify-start items-center`}>

@@ -99,12 +99,9 @@ export function VercelProvider({ children }: { children: ReactNode }) {
 
     // Check URL for Vercel connection parameters
     useEffect(() => {
-        const getVerselState = async () => {
-            const vercelUser: VercelUser = (await getVercelUser()) as any;
-            if (!vercelUser)
-                toast({
-                    title: "Vercel Error"
-                })
+        const getVercelState = async () => {
+            const vercelUser: VercelUser | null = (await getVercelUser()) as any;
+            if (!vercelUser) return;
             setVercelState(prev => ({
                 ...prev,
                 isConnected: true,
@@ -118,7 +115,7 @@ export function VercelProvider({ children }: { children: ReactNode }) {
             refreshVercelProjects();
         }
 
-        getVerselState();
+        getVercelState();
     }, []);
 
     const updateVercelState = (updates: Partial<VercelState>) => {
