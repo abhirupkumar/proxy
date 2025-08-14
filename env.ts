@@ -13,7 +13,6 @@ export const env = createEnv({
         GROQ_AI_KEY: z.string(),
         GOOGLE_API_KEY: z.string(),
         OPENAI_API_KEY: z.string(),
-        CLERK_JWT_KEY: z.string(),
 
         GITHUB_CLIENT_ID: z.string(),
         GITHUB_CLIENT_SECRET: z.string(),
@@ -52,7 +51,6 @@ export const env = createEnv({
         GROQ_AI_KEY: process.env.GROQ_AI_KEY,
         GOOGLE_API_KEY: process.env.GOOGLE_API_KEY,
         OPENAI_API_KEY: process.env.OPENAI_API_KEY,
-        CLERK_JWT_KEY: process.env.CLERK_JWT_KEY,
 
         NODE_ENV: process.env.NODE_ENV,
 
