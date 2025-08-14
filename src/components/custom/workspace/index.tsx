@@ -544,8 +544,8 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                         <UserInput stop={stop} disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
                     </div>
                 </ResizablePanel>}
+                {panels.code && panels.chat && <ResizableHandle withHandle />}
                 {isLoaded && isSignedIn && panels.code && <>
-                    <ResizableHandle />
                     <ResizablePanel defaultSize={63} minSize={25}>
                         <div className='flex flex-col h-full w-auto'>
                             <Tabs defaultValue="code" className="h-full flex flex-col">
