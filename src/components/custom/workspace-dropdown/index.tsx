@@ -8,10 +8,12 @@ import { ChevronDown, ChevronLeft, Globe, Settings, SquarePen, ToggleLeft } from
 import React from 'react'
 import { ModeToggle } from '../mode-toggle'
 import { useTheme } from 'next-themes'
+import Link from 'next/link'
 
 const WorkspaceDropdown = ({ title }: { title: string }) => {
   const { user, isLoaded, isSignedIn } = useUser();
-  const { setTheme } = useTheme()
+  const { setTheme } = useTheme();
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -21,19 +23,24 @@ const WorkspaceDropdown = ({ title }: { title: string }) => {
           <ChevronDown />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="start">
+      <DropdownMenuContent className="w-auto" align="start">
         <DropdownMenuGroup>
           <DropdownMenuItem>
-            <ChevronLeft className='h-4 w-4' />
-            Go to Dashboard
+            <Link href={"/"} className='flex items-center gap-x-1 w-full'>
+              <ChevronLeft className='h-4 w-4' />
+              Go to Dashboard
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator className='h-[1px] bg-accent' />
         <DropdownMenuGroup>
           <DropdownMenuLabel>
             {isLoaded && isSignedIn && <div className='w-full flex justify-start items-center'>
-              <img src={user.imageUrl} alt="user-image" className='h-6 w-6 rounded-full' />
-              <span className='ml-2'>{user.firstName}</span>
+              <img src={user.imageUrl} alt="user-image" className='h-8 w-8 rounded-full' />
+              <div className='flex flex-col ml-2 text-sm'>
+                <span className='font-semibold'>{user.fullName}</span>
+                <span className='font-extralight'>{user.emailAddresses[0].emailAddress}</span>
+              </div>
             </div>}
           </DropdownMenuLabel>
           <DropdownMenuItem>
