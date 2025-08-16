@@ -11,6 +11,7 @@
 # const sandbox = await Sandbox.create('proxy-nextjs-shadcn-template')
 
 team_id = "1c3b1db4-c5b0-4ed3-b894-a3515695f309"
+start_cmd = "/compile_page.sh"
 dockerfile = "e2b.Dockerfile"
 template_name = "proxy-nextjs-shadcn-template"
 template_id = "cbtu3o2a5frkpzp22y1v"
