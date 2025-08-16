@@ -39,8 +39,9 @@ model Workspace {
   supabaseProject SupabaseProject?
   isChangesPushed Boolean          @default(true)
   isPrivate       Boolean          @default(true)
-  template        String           @default("react")
+  template        String           @default("nextjs")
   createdAt       DateTime         @default(now())
+  sandboxId       String?          @unique
 }
 
 model Message {
