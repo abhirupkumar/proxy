@@ -17,4 +17,4 @@ function ping_server() {
 }
 
 ping_server &
-cd /home/user && npx next dev
+cd /home/project && npx next dev
