@@ -23,6 +23,7 @@
     "@codesandbox/sandpack-client": "^2.19.8",
     "@codesandbox/sandpack-react": "^2.20.0",
     "@codesandbox/sandpack-themes": "^2.0.21",
+    "@e2b/code-interpreter": "^1.5.1",
     "@genkit-ai/core": "^1.14.1",
     "@genkit-ai/flow": "^0.5.17",
     "@genkit-ai/googleai": "^1.14.1",
