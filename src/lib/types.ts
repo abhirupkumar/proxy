@@ -40,7 +40,7 @@ export interface ProxyRegexData {
     title: string;
 }
 
-export type ActionType = 'file' | 'shell';
+export type ActionType = 'file' | 'shell' | 'supabase' | 'rename' | 'delete';
 
 export interface BaseAction {
     content: string;
@@ -51,11 +51,33 @@ export interface FileAction extends BaseAction {
     filePath: string;
 }
 
+export interface StartAction extends BaseAction {
+    type: 'start';
+}
+
 export interface ShellAction extends BaseAction {
     type: 'shell';
 }
 
-export type ProxyAction = FileAction | ShellAction;
+export interface RenameAction extends BaseAction {
+    type: 'rename';
+    filePath: string;
+    newFilePath: string;
+}
+
+export interface DeleteAction extends BaseAction {
+    type: 'delete';
+    filePath: string;
+}
+
+export interface SupabaseAction extends BaseAction {
+    type: 'supabase';
+    operation: 'migration' | 'query';
+    filePath?: string;
+    projectId?: string;
+}
+
+export type ProxyAction = FileAction | ShellAction | StartAction | RenameAction | DeleteAction | SupabaseAction;
 
 export type ProxyActionData = ProxyAction | BaseAction;
 

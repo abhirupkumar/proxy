@@ -1,0 +1,17 @@
+# This is a config for E2B sandbox template.
+# You can use template ID (cbtu3o2a5frkpzp22y1v) or template name (proxy-nextjs-shadcn-template) to create a sandbox:
+
+# Python SDK
+# from e2b import Sandbox, AsyncSandbox
+# sandbox = Sandbox("proxy-nextjs-shadcn-template") # Sync sandbox
+# sandbox = await AsyncSandbox.create("proxy-nextjs-shadcn-template") # Async sandbox
+
+# JS SDK
+# import { Sandbox } from 'e2b'
+# const sandbox = await Sandbox.create('proxy-nextjs-shadcn-template')
+
+team_id = "1c3b1db4-c5b0-4ed3-b894-a3515695f309"
+start_cmd = "/compile_page.sh"
+dockerfile = "e2b.Dockerfile"
+template_name = "proxy-nextjs-shadcn-template"
+template_id = "cbtu3o2a5frkpzp22y1v"

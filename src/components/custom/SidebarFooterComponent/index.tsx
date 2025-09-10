@@ -20,7 +20,7 @@ const SidebarFooterComponent = () => {
         },
     ]
     return (
-        <div className='p-2 mb-10 gap-y-1.5 flex flex-col items-start'>
+        <div className='p-2 gap-y-1.5 flex flex-col items-start'>
             {
                 options.map((option: any, index: number) => {
                     return (

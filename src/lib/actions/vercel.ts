@@ -138,7 +138,7 @@ export async function disconnectVercel() {
 export async function getVercelUser() {
     const currentClerkUser = await currentUser();
     const userId = currentClerkUser?.id || null;
-    if (!userId) throw new Error('Not authenticated');
+    if (!userId) return null;
 
     const dbUser = await db.user.findUnique({
         where: {
@@ -153,7 +153,7 @@ export async function getVercelUser() {
 export async function getVercelProjects() {
     const currentClerkUser = await currentUser();
     const userId = currentClerkUser?.id || null;
-    if (!userId) throw new Error('Not authenticated');
+    if (!userId) return { projects: null }
 
     const user = await db.user.findUnique({
         where: { clerkId: userId }

@@ -1,42 +1,50 @@
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarRail, useSidebar } from '@/components/ui/sidebar';
-import { MessageCircle, PanelsLeftBottom } from 'lucide-react';
+import { MessageCircle, PanelsLeftBottom, SidebarIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'
 import WorkspaceHistory from '../workspace-history';
-import ToggleSidebar from '../toggle-sidebar';
 import SidebarFooterComponent from '../SidebarFooterComponent';
 import { useTheme } from 'next-themes';
 
 const AppSidebar = () => {
     const { theme } = useTheme();
-    const { toggleSidebar } = useSidebar();
+    const { toggleSidebar, state } = useSidebar();
+    const isCollapsed = state === 'collapsed';
     return (
         <Sidebar collapsible="offcanvas" suppressHydrationWarning>
-            <SidebarHeader className='p-5'>
+            <SidebarHeader className='p-4 flex flex-row justify-between'>
                 <Link href="/">
-                    {theme == 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={100} height={100} /> :
-                        <Image src="/logo-white.svg" alt="Logo" width={100} height={100} />}
+                    {theme === 'dark' ? <Image src="/logo-dark.svg" alt="Logo" width={120} height={40} /> :
+                        <Image src="/logo-white.svg" alt="Logo" width={120} height={40} />}
                 </Link>
+                <Button
+                    onClick={toggleSidebar}
+                    variant="ghost"
+                    size="icon"
+                    className="transition-transform duration-300 ease-in-out"
+                >
+                    <SidebarIcon className={`w-5 h-5 transform ${isCollapsed ? 'rotate-180' : ''}`} />
+                </Button>
             </SidebarHeader>
-            <SidebarContent className='p-5'>
-                <Link href='/' onClick={toggleSidebar} className={buttonVariants()}> <MessageCircle /> Start New Chat</Link>
-                <SidebarGroup />
-                <SidebarGroupLabel>Your Chats</SidebarGroupLabel>
-                <SidebarGroupContent>
-                    <SidebarMenu>
-                        <WorkspaceHistory />
-                    </SidebarMenu>
-                </SidebarGroupContent>
-                <SidebarGroup />
+            <SidebarContent className='p-4 space-y-4'>
+                <Link href='/' onClick={toggleSidebar} className={`${buttonVariants({})} w-full justify-start items-center`}>
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    <span className="text-md">Start New Chat</span>
+                </Link>
+                <SidebarGroup>
+                    <SidebarGroupLabel className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Your Chats</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu>
+                            <WorkspaceHistory />
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
             </SidebarContent>
-            <SidebarFooter>
+            <SidebarFooter className="p-4 border-t border-gray-200 dark:border-gray-800">
                 <SidebarFooterComponent />
             </SidebarFooter>
-            <SidebarRail className='h-full'>
-                <ToggleSidebar />
-            </SidebarRail>
         </Sidebar>
     )
 }

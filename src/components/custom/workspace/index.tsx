@@ -11,7 +11,7 @@ import { forkWorkspace, onFilesUpdate, onIdAndTitleUpdate, onMessagesUpdate } fr
 import { StreamingMessageParser } from '@/lib/stream-parser';
 import { allowedHTMLElements, rehypePlugins, remarkPlugins, stripIndents } from '@/lib/utils';
 import JSZip from 'jszip';
-import { ArrowRight, ChevronRight, ChevronsLeft, ChevronsRight, Download, GitFork, Loader2, MessageCircle } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronRight, ChevronsLeft, ChevronsRight, Download, GitFork, Globe, Loader2, MessageCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -37,6 +37,11 @@ import VercelDeployButton from '../vercel-deploy-button';
 import { SupabaseButton } from '../supabase-button';
 import { useSupabase } from '@/context/SupabaseContext';
 import { env } from 'env';
+import { UIMessage, useChat } from "@ai-sdk/react"
+import { DataUIPart, DefaultChatTransport, lastAssistantMessageIsCompleteWithToolCalls, ModelMessage } from 'ai';
+import { convertToUIMessages } from '@/lib/actions/ai';
+import { useIsMobile } from '@/hooks/use-mobile';
+import WorkspaceDropdown from '../workspace-dropdown';
 
 type ImageItem = {
     id: string;
@@ -55,22 +60,21 @@ type initialSupabaseDataProp = {
 const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any, workspace: any, initialSupabaseData: initialSupabaseDataProp }) => {
     const { userId, isLoaded, isSignedIn } = useAuth();
     const [isChangesPushed, setIsChangesPushed] = useState<boolean>(true)
-    const [title, setTitle] = useState<string>("")
-    const [artifactId, setArtifactId] = useState<string>(workspace.artifactId ?? "proxy-web-app")
     const [newAiMessage, setNewAiMessage] = useState<string>("");
     const [action, setAction] = useState<string>("");
     const [isFilesUpdated, setIsFilesUpdated] = useState<Boolean>(false);
     const [userInput, setUserInput] = useState<string | null | undefined>('');
     const [scrapeUrl, setScrapeUrl] = useState<string>('');
     const [images, setImages] = useState<ImageItem[]>([]);
+    const [initialMessages, setInitialMessages] = useState<UIMessage[]>([])
     const [latestUrl, setLatestUrl] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const abortControllerRef = useRef<AbortController | null>(null);
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const [iconLoading, setIconLoading] = useState(false);
-
-    const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, setWorkspaceData } = useWorkspaceData();
+    const isMobile = useIsMobile();
+    const { setTemplate, messages, setMessages, files, setFiles, handleFileSelect, setIsPrivate, workspaceData, setWorkspaceData } = useWorkspaceData();
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const { toast } = useToast()
     const [panels, setPanels] = useState<{ chat: boolean, code: boolean }>({ chat: true, code: true });
@@ -78,6 +82,40 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     const controller = new AbortController();
 
     const { setConnection, setIsConnecting } = useSupabase();
+
+    // const {
+    //     messages: chatMessages, sendMessage, regenerate, stop, status
+    // } = useChat<UIMessage>({
+    //     transport: new DefaultChatTransport({
+    //         api: '/api/chat',
+    //         prepareSendMessagesRequest: () => {
+    //             return {
+    //                 body: {
+    //                     workspaceId: workspace.id,
+    //                 },
+    //             };
+    //         }
+    //     }),
+    //     sendAutomaticallyWhen: () => false,
+    //     onError: (error: Error) => {
+    //         console.log("Error: ", error);
+    //         stop();
+    //         setLoading(false);
+    //     },
+    //     onData: (data: any) => {
+    //         console.log("onData")
+    //     },
+    //     onFinish: (message: any) => {
+    //         console.log("done")
+    //     },
+    //     messages: initialMessages
+    // });
+
+    useEffect(() => {
+        if (isMobile) {
+            setPanels({ chat: true, code: false });
+        }
+    }, [isMobile]);
 
     useEffect(() => {
         setConnection({
@@ -88,6 +126,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     }, [initialSupabaseData]);
 
     useEffect(() => {
+        fillInitialMessages();
         if (scrollContainerRef.current) {
             const scrollContainer = scrollContainerRef.current;
             scrollContainer.scrollTop = scrollContainer.scrollHeight;
@@ -99,6 +138,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setTemplate(workspace.template);
         const sortedMessages = workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt)
         setMessages(sortedMessages.map((msg: Message) => ({
+            id: msg.id,
             role: msg.role,
             content: msg.content,
             url: msg.url,
@@ -110,21 +150,24 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setIsPrivate(workspace.isPrivate);
         setIsChangesPushed(workspace.isChangesPushed)
         setFiles(workspace.fileData);
-        setTitle(workspace.title);
-        setArtifactId(workspace.artifactId ?? "proxy-web-app");
         setLoading(false);
     }, [workspace]);
 
+    const fillInitialMessages = async () => {
+        const modelMessage = await convertToUIMessages(workspace);
+        setInitialMessages(modelMessage)
+    }
+
     const handleDownload = async () => {
         const zip = new JSZip();
-        const projectFolder = zip.folder(artifactId);
+        const projectFolder = zip.folder(workspaceData.artifactId);
         Object.entries(files!).forEach(([filename, { code }]) => {
             projectFolder?.file(filename, code);
         });
         const content = await zip.generateAsync({ type: 'blob' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
-        link.download = artifactId + ".zip";
+        link.download = workspaceData.artifactId + ".zip";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -136,28 +179,49 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 setAction("Generating Response");
             },
             onRegexClose: (data) => {
-                if (artifactId == "proxy-web-app") {
-                    setArtifactId(data.id);
-                    setTitle(data.title)
+                if (workspaceData.artifactId == "proxy-web-app") {
                     onIdAndTitleUpdate(workspace.id, data.title, data.id);
+                    setWorkspaceData({
+                        ...workspaceData,
+                        title: data.title,
+                        artifactId: data.id
+                    })
                 }
                 setAction("");
             },
             onActionOpen: (data) => {
+
+            },
+            onActionStream: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath
+                    let newFileContent = data.action.content;
                     setAction(`Editing ${filePath}`)
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
+                        return updatedFiles;
+                    });
+                }
+                if (data.action.type == "shell") {
+                    setAction(`Running shell command: ${data.action.content}`);
+                }
+                if (data.action.type == "start") {
+                    setAction(`Starting development server`);
+                }
+                if (data.action.type == "rename") {
+                    setAction(`Renaming file from ${data.action.filePath} to ${data.action.newFilePath}`);
+                }
+                if (data.action.type == "delete") {
+                    setAction(`Deleting file ${data.action.filePath}`);
+                }
+                if (data.action.type == "supabase") {
+                    setAction(`Running Supabase action: ${data.action.operation}`);
                 }
             },
             onActionClose: (data) => {
                 if (data.action.type == "file") {
                     const filePath = data.action.filePath;
                     let newFileContent = data.action.content;
-                    if (newFileContent.endsWith("```")) {
-                        newFileContent = newFileContent.slice(0, -3);
-                    }
-                    // newFileContent = newFileContent.replace(/^```[a-zA-Z0-9]+\n?/, '');
-
                     setFiles((prevFiles) => {
                         const updatedFiles = { ...prevFiles, [filePath]: { code: newFileContent } };
 
@@ -166,6 +230,50 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                     handleFileSelect(filePath);
                     setIsFilesUpdated(true);
                     setAction("");
+                }
+                if (data.action.type == "shell") {
+                    setAction(`Running shell command: ${data.action.content}`);
+                }
+                if (data.action.type == "start") {
+                    setAction(`Starting development server`);
+                }
+                if (data.action.type == "rename") {
+                    const oldFilePath = data.action.filePath;
+                    const newFilePath = data.action.newFilePath;
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles };
+                        if (updatedFiles[oldFilePath]) {
+                            updatedFiles[newFilePath] = updatedFiles[oldFilePath];
+                            delete updatedFiles[oldFilePath];
+                        }
+                        return updatedFiles;
+                    });
+                    setIsFilesUpdated(true);
+                    setAction(`Renamed file from ${data.action.filePath} to ${data.action.newFilePath}`);
+                }
+                if (data.action.type == "delete") {
+                    const filePath = data.action.filePath;
+                    setFiles((prevFiles) => {
+                        const updatedFiles = { ...prevFiles };
+                        delete updatedFiles[filePath];
+                        return updatedFiles;
+                    });
+                    setIsFilesUpdated(true);
+                    setAction(`Deleted file: ${data.action.filePath}`);
+                }
+                if (data.action.type == "supabase") {
+                    if (data.action.operation == "migration") {
+                        const filePath = data.action.filePath as string;
+                        setFiles((prevFiles) => {
+                            const updatedFiles = { ...prevFiles, [filePath]: { code: data.action.content } };
+                            return updatedFiles;
+                        });
+                        setIsFilesUpdated(true);
+                        setAction(`Created Supabase Migration File: ${data.action.operation}`);
+                    }
+                    if (data.action.operation == "query") {
+                        setAction(`Ran Supabase action: ${data.action.operation}`);
+                    }
                 }
             }
 
@@ -178,7 +286,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             onFilesUpdate(workspace.id, files)
             setIsFilesUpdated(false);
         }
-    }, [isFilesUpdated])
+    }, [isFilesUpdated]);
 
     useEffect(() => {
         if (!loading && messages?.length > 0) {
@@ -192,6 +300,10 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             }
             const role = messages[messages?.length - 1].role;
             if (role == 'user') {
+                // sendMessage({
+                //     text: messages[messages?.length - 1].content
+                // })
+                // setLoading(true);
                 init();
             }
         }
@@ -203,13 +315,28 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setLatestUrl(scrapeUrl);
         const imageUrls = images.map((image) => image.url).filter((url) => url !== undefined) as string[];
         await onMessagesUpdate(null, 'user', content, workspace.id, scrapeUrl, imageUrls);
+        // if (imageUrls && imageUrls.length > 0) {
+        //     sendMessage({
+        //         text: content,
+        //         files: imageUrls.map((image) => ({
+        //             type: 'file',
+        //             mediaType: 'image/jpeg',
+        //             url: image,
+        //         }))
+        //     })
+        // }
+        // else
+        //     sendMessage({
+        //         text: content,
+        // })
         setMessages((prev: Message[]) => [...prev, {
+            id: uuidv4(),
             role: 'user',
             content: content
         }]);
         setImages([]);
         setScrapeUrl("");
-        setLoading(false);
+        // setLoading(false);
     }
 
     function debouncedSaveToIndexedDB(messageId: string, workspaceId: string, content: string) {
@@ -243,17 +370,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
 
         if (latestUrl != "") {
             setAction("Scraping the Url");
-            // const scrapedResult = await fetch("/api/scrape", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({
-            //         targetUrl: latestUrl,
-            //         text: messages[messages.length - 1].content,
-            //         workspaceId: workspace.id,
-            //     }),
-            // });
             const scrapedData = await scrapeFromUrl(latestUrl, messages[messages.length - 1].content, workspace.id);
-            // const scrapedData = await scrapedResult.json();
             if (scrapedData.error) {
                 msg += 'Couldn\'t scrape the provided url.\n';
             }
@@ -266,15 +383,17 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }
 
         let newMessages = messages;
-        newMessages.push({ role: 'model', content: msg });
+        newMessages.push({ id: uuidv4(), role: 'model', content: msg });
 
         setMessages(newMessages);
 
+        const messageId = uuidv4();
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                workspaceId: workspace.id
+                workspaceId: workspace.id,
+                newMessageId: messageId
             }),
             signal: controller.signal
         });
@@ -290,34 +409,25 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
-        const messageId = uuidv4();
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
             try {
                 const text = decoder.decode(value, { stream: true });
+                console.log(text);
                 buffer += text;
                 const parsedText = messageParser.parse(messageId, buffer);
-                // if (parsedText.length > 0 && parsedText.slice(-1) === " ") {
-                //     msg += stripIndents(parsedText.trim() + " ");
-                // } else {
                 msg += stripIndents(parsedText.trim());
-                // }
-                // onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
                 newMessages.pop();
-                newMessages.push({ role: 'model', content: msg });
+                newMessages.push({ id: messageId, role: 'assistant', content: msg });
                 setMessages(newMessages);
-                // save partial to IndexedDB
                 debouncedSaveToIndexedDB(messageId, workspace.id, msg);
-
-                // save partial to server (optional, for recovery)
                 debouncedSaveToServer(messageId, workspace.id, msg);
             }
             catch (error) {
                 console.error("Error parsing message: ", error);
             }
         }
-        // router.refresh();
         await indexedDB.put('messages', {
             id: messageId,
             role: 'model',
@@ -344,11 +454,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setIconLoading(false);
     }
 
-    const handleAbort = () => {
-        abortControllerRef.current?.abort();
-        setLoading(false);
-    };
-
     const truncate = (str: string) => {
         if (str.length > 30) {
             return str.substring(0, 30) + "...";
@@ -365,7 +470,8 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             }
         }
         else {
-            setPanels({ chat: true, code: true });
+            if (isMobile) setPanels({ chat: !panels.chat, code: !panels.code });
+            else setPanels({ chat: true, code: true });
         }
     }
 
@@ -375,8 +481,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             .join('\n')
             .trimStart()
             .replace(/[\r\n]$/, '');
-        console.log(str.split("\n"))
-        console.log(newStr.split("\n"))
         return newStr
     }
 
@@ -387,9 +491,9 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 className="max-w-full border-t md:min-w-[450px]"
             >
                 {panels.chat && <ResizablePanel defaultSize={37} minSize={25}>
-                    <div className='relative h-[100vh] flex flex-col p-3 pt-2 items-center'>
-                        <div className='w-full mr-auto ml-3 mb-2 flex justify-between items-center'>
-                            <h2>{title != "" ? title : "New Chat"}</h2>
+                    <div className='relative h-[100vh] flex flex-col p-2 items-center'>
+                        <div className='w-full mr-auto ml-1.5 mb-2 flex justify-between items-center'>
+                            <WorkspaceDropdown />
                             <span className='flex' suppressHydrationWarning>
                                 <Link title='New Chat' href='/' className={buttonVariants({ size: 'icon', variant: 'link' })}><MessageCircle /></Link>
                                 {iconLoading ? <Loader2 className='h-4 w-9 animate-spin' /> : <Button title='Fork' onClick={handleFork} size='icon' variant={'link'}><GitFork /></Button>}
@@ -418,21 +522,18 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                     <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
                                         {loading == true && message?.role == 'model' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="whitespace-pre-wrap">
-                                            <ReactMarkdown
-                                                allowedElements={allowedHTMLElements}
-                                                className={styles.MarkdownContent}
-                                            >{message.content}</ReactMarkdown>
+                                            <ReactMarkdown>{message.content}</ReactMarkdown>
                                         </div>
                                     </div>
                                 </div>))}
-                            {/* {newAiMessage != "" && <div className='flex gap-2 items-start rounded-lg p-3 mb-2'>
-                                <div className="whitespace-pre-wrap">
-                                    <ReactMarkdown
-                                        allowedElements={allowedHTMLElements}
-                                        className={styles.MarkdownContent}
-                                    >{newAiMessage}</ReactMarkdown>
+                            {/* {chatMessages && chatMessages.length > 0 && chatMessages.map((chatMessage, index) => {
+                                return <div key={index} className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${chatMessage.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
+                                    {loading == true && chatMessage.role == 'user' && <Loader2 className='h-4 w-4 animate-spin' />}
+                                    {chatMessage.parts.map((part, index) => <div key={index} className="whitespace-pre-wrap">
+                                        <ReactMarkdown>{part.type === "text" ? part.text : ""}</ReactMarkdown>
+                                    </div>)}
                                 </div>
-                            </div>} */}
+                            })} */}
                             {action != "" && <button className='flex items-center gap-2 rounded-full p-3 mb-2 bg-secondary'>
                                 {action}<Loader2 className='h-4 w-4 animate-spin' />
                             </button>}
@@ -440,11 +541,11 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                 <div className='ai-loader'></div>
                             </div>}
                         </div>
-                        <UserInput controller={controller} disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
+                        <UserInput stop={stop} disabled={!isLoaded ? true : !isSignedIn ? true : dbUser.clerkId != userId} onGenerate={onGenerate} loading={loading} setLoading={setLoading} userInput={userInput} setUserInput={setUserInput} scrapeUrl={scrapeUrl} setScrapeUrl={setScrapeUrl} images={images} setImages={setImages} />
                     </div>
                 </ResizablePanel>}
+                {panels.code && panels.chat && <ResizableHandle withHandle />}
                 {isLoaded && isSignedIn && panels.code && <>
-                    <ResizableHandle />
                     <ResizablePanel defaultSize={63} minSize={25}>
                         <div className='flex flex-col h-full w-auto'>
                             <Tabs defaultValue="code" className="h-full flex flex-col">
@@ -463,7 +564,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                             isConnected={!!dbUser.githubToken && dbUser.githubToken != ""}
                                             repoUrl={workspace.githubRepo?.repoUrl ?? ""}
                                             hasUnpushedChanges={!isChangesPushed}
-                                            workspaceTitle={title}
+                                            workspaceTitle={workspaceData.title ?? ""}
                                         /> : <Skeleton className='w-6 h-6 rounded-full' />)}
 
                                         <Button title='Export' variant="link" size='icon' className='mr-4' onClick={handleDownload}>

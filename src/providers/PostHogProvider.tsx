@@ -8,6 +8,9 @@ import { useAuth, useUser } from "@clerk/nextjs"
 import { env } from "env"
 
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
+  if (process.env.NODE_ENV !== "production") {
+    return <>{children}</>
+  }
   useEffect(() => {
     posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY!, {
       api_host: "/ingest",

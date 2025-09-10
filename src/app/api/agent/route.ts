@@ -1,56 +1,27 @@
-import { NodeBasePrompt, ReactBasePrompt } from '@/data/BasePrompts';
-import { getSystemPrompt } from '@/data/Prompt';
-import { gemini } from '@/lib/gemini';
-import { currentUser, verifyToken } from '@clerk/nextjs/server';
-import { FunctionCallingMode, SchemaType, Tool } from '@google/generative-ai';
+import { agentTools } from '@/data/functions-schema';
+import { newPrompt } from '@/data/NewPrompt';
+import { generateContentStream } from '@/lib/vercel-ai-gemini';
 import { NextRequest, NextResponse } from 'next/server';
 
-interface Message {
-    "role": "user" | "assistant",
-    "parts": [{ "text": string }]
-}
-
 export async function POST(req: NextRequest) {
-    const user = await currentUser();
-    if (!user)
-        return NextResponse.json({ error: "Unauthorized access denied." }, { status: 401 });
+    if (process.env.NODE_ENV !== 'development') {
+        return NextResponse.json({ status: 404 });
+    }
 
-    const { messages, tool } = await req.json() as { messages: any, tool: any };
+    const { history } = await req.json();
+
+    // Convert history to a single prompt string for the Vercel AI SDK
+    const prompt = history.map((h: any) =>
+        `${h.role}: ${h.parts?.map((p: any) => p.text || '').join('') || h.text || ''}`
+    ).join('\n\n');
 
     try {
+        const result = await generateContentStream(prompt, newPrompt);
 
-        const result = await gemini.generateContent({
-            contents: messages,
-            generationConfig: {
-                temperature: 0.5,
-                topP: 0.8,
-            },
-            systemInstruction: {
-                role: "system",
-                parts: [{ text: getSystemPrompt() }]
-            },
-            tools: [
-                {
-                    functionDeclarations: [
-                        tool
-                    ]
-                }
-            ],
-            toolConfig: {
-                functionCallingConfig: {
-                    mode: FunctionCallingMode.ANY
-                }
-            }
-        });
-
-        const answer = result.response;
-        console.log(answer);
-
-        return NextResponse.json({ response: answer }, { status: 200 });
-
-    } catch (error: any) {
-        console.log(error);
-        return NextResponse.json({ error: error }, { status: 500 });
+        return result.toTextStreamResponse();
+    } catch (error) {
+        console.error("Error generating content:", error);
+        return NextResponse.json({ error: "Failed to generate content" }, { status: 500 });
     }
 }
 

@@ -6,7 +6,6 @@ interface Env {
     GROQ_AI_KEY: string,
     GOOGLE_API_KEY: string,
     OPENAI_API_KEY: string,
-    CLERK_JWT_KEY: string,
 
     NODE_ENV: string,
 
