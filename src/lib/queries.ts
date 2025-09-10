@@ -26,13 +26,18 @@ export const getUser = async () => {
             return newUser;
         }
         return dbUser;
-    }
-    catch (error: any) {
+    } catch (error: any) {
         return null;
     }
-}
+};
 
-export const createWorkspace = async (messages: { role: string, content: string }, user: any, scrapeUrl: string, images: string[], template: string) => {
+export const createWorkspace = async (
+    messages: { role: string; content: string },
+    user: any,
+    scrapeUrl: string,
+    images: string[],
+    template: string
+) => {
     try {
         const workspace = await db.workspace.create({
             data: {
@@ -45,20 +50,18 @@ export const createWorkspace = async (messages: { role: string, content: string 
                         content: messages.content,
                         url: scrapeUrl,
                         photoUrls: images,
-                    }
-                }
+                    },
+                },
             },
         });
         return workspace;
-    }
-    catch (error: any) {
+    } catch (error: any) {
         return null;
     }
-}
+};
 
 export const getWorkspace = async (id: string) => {
     try {
-
         const workspace = await db.workspace.findUnique({
             where: {
                 id: id,
@@ -69,18 +72,17 @@ export const getWorkspace = async (id: string) => {
                 User: true,
                 vercelProject: {
                     include: {
-                        deployments: true // Include the deployment relationship
-                    }
+                        deployments: true, // Include the deployment relationship
+                    },
                 },
             },
         });
         return workspace;
-    }
-    catch (error: any) {
-        console.log(error)
+    } catch (error: any) {
+        console.log(error);
         return null;
     }
-}
+};
 
 export const getAllWorkspaces = async (userId: string) => {
     try {
@@ -88,29 +90,36 @@ export const getAllWorkspaces = async (userId: string) => {
             where: {
                 User: {
                     clerkId: userId,
-                }
+                },
             },
             include: {
                 Messages: {
                     select: {
                         role: true,
                         content: true,
-                    }
+                    },
                 },
-            }
+            },
+            orderBy: {
+                createdAt: "desc",
+            },
         });
         return workspaces;
-    }
-    catch (error: any) {
+    } catch (error: any) {
         return null;
     }
-}
+};
 
-export const updateWorkspace = async (id: any, messages: any, llmmessage: any, files?: any) => {
+export const updateWorkspace = async (
+    id: any,
+    messages: any,
+    llmmessage: any,
+    files?: any
+) => {
     let data: { message: any; llmmessage: any; fileData?: any } = {
         message: messages,
-        llmmessage: llmmessage
-    }
+        llmmessage: llmmessage,
+    };
     if (files) {
         data.fileData = files;
     }
@@ -119,15 +128,13 @@ export const updateWorkspace = async (id: any, messages: any, llmmessage: any, f
             where: {
                 id: id,
             },
-            data: data
-        })
+            data: data,
+        });
         return workspace;
-    }
-    catch (error: any) {
+    } catch (error: any) {
         return null;
     }
-}
-
+};
 
 export const deleteWorkspace = async (id: any) => {
     try {
@@ -137,11 +144,10 @@ export const deleteWorkspace = async (id: any) => {
             },
         });
         return workspace;
-    }
-    catch (error: any) {
+    } catch (error: any) {
         return null;
     }
-}
+};
 
 export const forkWorkspace = async (workspaceId: string) => {
     try {
@@ -152,8 +158,8 @@ export const forkWorkspace = async (workspaceId: string) => {
                 id: workspaceId,
             },
             include: {
-                Messages: true
-            }
+                Messages: true,
+            },
         });
         const dbUser = await db.user.findUnique({
             where: {
@@ -175,24 +181,30 @@ export const forkWorkspace = async (workspaceId: string) => {
                 isPrivate: true,
                 Messages: {
                     createMany: {
-                        data: [...workspace.Messages.sort((a: any, b: any) => a.createdAt - b.createdAt).map((message) => ({
-                            role: message.role,
-                            content: message.content,
-                            url: message.url ?? null,
-                            urlScrapedData: message.urlScrapedData === null ? Prisma.JsonNull : message.urlScrapedData,
-                        }))],
-                        skipDuplicates: true
-                    }
-                }
-            }
+                        data: [
+                            ...workspace.Messages.sort(
+                                (a: any, b: any) => a.createdAt - b.createdAt
+                            ).map((message) => ({
+                                role: message.role,
+                                content: message.content,
+                                url: message.url ?? null,
+                                urlScrapedData:
+                                    message.urlScrapedData === null
+                                        ? Prisma.JsonNull
+                                        : message.urlScrapedData,
+                            })),
+                        ],
+                        skipDuplicates: true,
+                    },
+                },
+            },
         });
         return newWorkspace;
-    }
-    catch (error: any) {
-        console.log(error.message)
+    } catch (error: any) {
+        console.log(error.message);
         return null;
     }
-}
+};
 
 export async function onFilesUpdate(id: string, files: any) {
     await db.workspace.update({
@@ -201,13 +213,20 @@ export async function onFilesUpdate(id: string, files: any) {
         },
         data: {
             fileData: files,
-            isChangesPushed: false
-        }
-    })
-    console.log(files)
+            isChangesPushed: false,
+        },
+    });
+    console.log(files);
 }
 
-export async function onMessagesUpdate(id: string | null, role: string, content: string, workspaceId: string, scrapeUrl: string, images?: string[]) {
+export async function onMessagesUpdate(
+    id: string | null,
+    role: string,
+    content: string,
+    workspaceId: string,
+    scrapeUrl: string,
+    images?: string[]
+) {
     if (id == null) {
         await db.message.create({
             data: {
@@ -215,26 +234,25 @@ export async function onMessagesUpdate(id: string | null, role: string, content:
                 content: content,
                 workspaceId: workspaceId,
                 url: scrapeUrl,
-                photoUrls: images ?? []
-            }
-        })
-    }
-    else {
+                photoUrls: images ?? [],
+            },
+        });
+    } else {
         await db.message.upsert({
             where: {
                 id: id,
             },
             update: {
                 role: role,
-                content: content
+                content: content,
             },
             create: {
                 id: id,
                 role: role,
                 content: content,
-                workspaceId: workspaceId
-            }
-        })
+                workspaceId: workspaceId,
+            },
+        });
     }
 }
 
@@ -243,7 +261,6 @@ export async function onShellCommand(shellCommand: string) {
     const commands = shellCommand.split("&&");
     for (const command of commands) {
         // console.log(`Running command: ${command}`);
-
         // await db.action.create({
         //     data: {
         //         projectId,
@@ -254,7 +271,11 @@ export async function onShellCommand(shellCommand: string) {
     }
 }
 
-export async function onIdAndTitleUpdate(id: string, title: string, artifactId?: string) {
+export async function onIdAndTitleUpdate(
+    id: string,
+    title: string,
+    artifactId?: string
+) {
     if (artifactId) {
         await db.workspace.update({
             where: {
@@ -262,23 +283,25 @@ export async function onIdAndTitleUpdate(id: string, title: string, artifactId?:
             },
             data: {
                 title: title,
-                artifactId: artifactId
-            }
-        })
-    }
-    else {
+                artifactId: artifactId,
+            },
+        });
+    } else {
         await db.workspace.update({
             where: {
                 id: id,
             },
             data: {
-                title: title
-            }
-        })
+                title: title,
+            },
+        });
     }
 }
 
-export const changePrivateWorkspace = async (id: string, isPrivate: boolean) => {
+export const changePrivateWorkspace = async (
+    id: string,
+    isPrivate: boolean
+) => {
     try {
         const workspace = await db.workspace.update({
             where: {
@@ -289,24 +312,28 @@ export const changePrivateWorkspace = async (id: string, isPrivate: boolean) => 
             },
         });
         return workspace;
-    }
-    catch (error: any) {
-        console.log(error)
+    } catch (error: any) {
+        console.log(error);
         return null;
     }
-}
+};
 
 export const getClerkClient = async () => {
     return await clerkClient();
-}
+};
 
-export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: string, fileData: any) {
+export async function pushWorkspaceToRepo(
+    octokit: any,
+    owner: string,
+    repo: string,
+    fileData: any
+) {
     try {
         // Get the default branch reference
         const { data: refData } = await octokit.git.getRef({
             owner,
             repo,
-            ref: 'heads/main', // Using main as the default branch
+            ref: "heads/main", // Using main as the default branch
         });
 
         const mainBranchSha = refData.object.sha;
@@ -321,12 +348,14 @@ export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: str
         const treeSha = commitData.tree.sha;
 
         // Prepare files for the new tree
-        const files = Object.entries(fileData).map(([path, content]: [path: string, content: any]) => ({
-            path,
-            mode: '100644', // Regular file
-            type: 'blob',
-            content: content.code as string,
-        }));
+        const files = Object.entries(fileData).map(
+            ([path, content]: [path: string, content: any]) => ({
+                path,
+                mode: "100644", // Regular file
+                type: "blob",
+                content: content.code as string,
+            })
+        );
 
         // Create a new tree
         const { data: newTree } = await octokit.git.createTree({
@@ -340,7 +369,7 @@ export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: str
         const { data: newCommit } = await octokit.git.createCommit({
             owner,
             repo,
-            message: 'Use tech stack Vite + React + Typescript',
+            message: "Use tech stack Vite + React + Typescript",
             tree: newTree.sha,
             parents: [mainBranchSha],
         });
@@ -349,13 +378,13 @@ export async function pushWorkspaceToRepo(octokit: any, owner: string, repo: str
         await octokit.git.updateRef({
             owner,
             repo,
-            ref: 'heads/main',
+            ref: "heads/main",
             sha: newCommit.sha,
         });
 
         return true;
     } catch (error) {
-        console.error('Error pushing initial code to repository:', error);
+        console.error("Error pushing initial code to repository:", error);
         throw error;
     }
 }
