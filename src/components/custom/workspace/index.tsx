@@ -30,7 +30,6 @@ import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
-import { getIndexedDB } from '@/lib/indexed-db';
 import VercelDeployButton from '../vercel-deploy-button';
 import { SupabaseButton } from '../supabase-button';
 import { useSupabase } from '@/context/SupabaseContext';
@@ -338,20 +337,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         // setLoading(false);
     }
 
-    function debouncedSaveToIndexedDB(messageId: string, workspaceId: string, content: string) {
-        if (saveTimeout) clearTimeout(saveTimeout);
-        saveTimeout = setTimeout(async () => {
-            const db = await getIndexedDB();
-            await db.put('messages', {
-                id: messageId,
-                role: 'model',
-                content: content,
-                workspaceId,
-                createdAt: Date.now(),
-            });
-        }, 3000);
-    }
-
     function debouncedSaveToServer(messageId: string, workspaceId: string, content: string) {
         if (saveTimeout) clearTimeout(saveTimeout);
         saveTimeout = setTimeout(async () => {
@@ -403,8 +388,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
             return;
         }
 
-        const indexedDB = await getIndexedDB();
-
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
         let buffer = "";
@@ -420,22 +403,13 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 newMessages.pop();
                 newMessages.push({ id: messageId, role: 'assistant', content: msg });
                 setMessages(newMessages);
-                debouncedSaveToIndexedDB(messageId, workspace.id, msg);
                 debouncedSaveToServer(messageId, workspace.id, msg);
             }
             catch (error) {
                 console.error("Error parsing message: ", error);
             }
         }
-        await indexedDB.put('messages', {
-            id: messageId,
-            role: 'model',
-            content: msg,
-            workspaceId: workspace.id,
-            createdAt: Date.now(),
-        });
         await onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
-        await indexedDB.delete('messages', messageId);
         setNewAiMessage("");
         setLoading(false);
     }
