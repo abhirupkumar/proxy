@@ -57,7 +57,7 @@ const Hero = ({ user }: { user: any }) => {
     return (
         <>
             <div className='flex flex-col flex-1 items-center justify-center min-h-screen px-4 sm:px-6 lg:px-8 text-center' suppressHydrationWarning>
-                <Spotlight xOffset={-40} translateY={-40} />
+                {/* <Spotlight xOffset={-40} translateY={-40} /> */}
                 <div className="max-w-4xl mx-auto">
                     <h1 className='text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 dark:text-white leading-tight'>
                         {Lookup.HERO_HEADING}

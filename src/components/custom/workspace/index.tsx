@@ -21,7 +21,6 @@ import ReactMarkdown from "react-markdown";
 import { v4 as uuidv4 } from 'uuid';
 import ButtonLoader from '../button-loader';
 import SandpackViewer from '../sandpack-viewer';
-import styles from './_components/Markdown.module.scss';
 import UserInput from '../user-input';
 import { scrapeFromUrl } from '@/lib/actions';
 import PrivateButton from '../private-button';
@@ -29,7 +28,6 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
-import CustomMarkdown from './_components/CustomMarkdown';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { DialogTitle } from '@radix-ui/react-dialog';
 import { getIndexedDB } from '@/lib/indexed-db';
@@ -42,6 +40,7 @@ import { DataUIPart, DefaultChatTransport, lastAssistantMessageIsCompleteWithToo
 import { convertToUIMessages } from '@/lib/actions/ai';
 import { useIsMobile } from '@/hooks/use-mobile';
 import WorkspaceDropdown from '../workspace-dropdown';
+import { Markdown } from '@/components/ui/markdown';
 
 type ImageItem = {
     id: string;
@@ -475,13 +474,12 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }
     }
 
-    function removeUnwantedGaps(str: string) {
-        const newStr = str.split('\n')
-            .filter((line) => line != "")
-            .join('\n')
-            .trimStart()
-            .replace(/[\r\n]$/, '');
-        return newStr
+    function cleanText(text: string): string {
+        return text
+            .split("\n")                 // Split into lines
+            .map(line => line.trim())    // Trim spaces around each line
+            .filter(line => line.length > 0) // Remove empty lines
+            .join("\n");                 // Join back into a single string
     }
 
     return (
@@ -521,19 +519,13 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                     {message.role != 'user' && (resolvedTheme == 'dark' ? <Image className='ml-2' src="/logo-dark.svg" alt="logo" height={80} width={80} /> : <Image className='ml-2' src="/logo-white.svg" alt="logo" height={80} width={80} />)}
                                     <div className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${message.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
                                         {loading == true && message?.role == 'model' && <Loader2 className='h-4 w-4 animate-spin' />}
-                                        <div className="whitespace-pre-wrap">
-                                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                                        <div className="">
+                                            <Markdown className="prose prose-sm dark:prose-invert max-w-none">
+                                                {cleanText(message.content)}
+                                            </Markdown>
                                         </div>
                                     </div>
                                 </div>))}
-                            {/* {chatMessages && chatMessages.length > 0 && chatMessages.map((chatMessage, index) => {
-                                return <div key={index} className={`flex gap-2 items-start rounded-lg p-2 mb-2 leading-7 ${chatMessage.role == "user" ? "border justify-end w-fit ml-auto bg-secondary" : ""}`}>
-                                    {loading == true && chatMessage.role == 'user' && <Loader2 className='h-4 w-4 animate-spin' />}
-                                    {chatMessage.parts.map((part, index) => <div key={index} className="whitespace-pre-wrap">
-                                        <ReactMarkdown>{part.type === "text" ? part.text : ""}</ReactMarkdown>
-                                    </div>)}
-                                </div>
-                            })} */}
                             {action != "" && <button className='flex items-center gap-2 rounded-full p-3 mb-2 bg-secondary'>
                                 {action}<Loader2 className='h-4 w-4 animate-spin' />
                             </button>}
