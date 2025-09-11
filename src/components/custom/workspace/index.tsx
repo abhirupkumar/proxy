@@ -474,14 +474,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }
     }
 
-    function cleanText(text: string): string {
-        return text
-            .split("\n")                 // Split into lines
-            .map(line => line.trim())    // Trim spaces around each line
-            .filter(line => line.length > 0) // Remove empty lines
-            .join("\n");                 // Join back into a single string
-    }
-
     return (
         <div className='w-full text-sm' suppressHydrationWarning>
             <ResizablePanelGroup
@@ -521,7 +513,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                                         {loading == true && message?.role == 'model' && <Loader2 className='h-4 w-4 animate-spin' />}
                                         <div className="">
                                             <Markdown className="prose prose-sm dark:prose-invert max-w-none">
-                                                {cleanText(message.content)}
+                                                {message.content}
                                             </Markdown>
                                         </div>
                                     </div>
