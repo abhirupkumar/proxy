@@ -62,7 +62,7 @@ function cleanoutMarkdownSyntax(content: string) {
 }
 
 function cleanEscapedTags(content: string) {
-    return content.replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+    return content.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x2F;/g, '/').replace(/&#x60;/g, '`').replace(/&#x3D;/g, '=').replace(/&#x7B;/g, '{').replace(/&#x7D;/g, '}').replace(/&#x5B;/g, '[').replace(/&#x5D;/g, ']').replace(/&#x28;/g, '(').replace(/&#x29;/g, ')');
 }
 
 export class StreamingMessageParser {

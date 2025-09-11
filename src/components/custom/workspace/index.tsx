@@ -302,7 +302,7 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                 //     text: messages[messages?.length - 1].content
                 // })
                 // setLoading(true);
-                init();
+                init(null);
             }
         }
     }, [messages, loading]);
@@ -348,16 +348,19 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         }, 3000);
     }
 
-    const init = async () => {
+    const init = async (prevMessageId: string | null) => {
         setLoading(true);
         let msg = "";
 
+        const messageId = !prevMessageId ? uuidv4() : prevMessageId;
         let newMessages = messages;
-        newMessages.push({ id: uuidv4(), role: 'model', content: msg });
+        if (!prevMessageId)
+            newMessages.push({ id: uuidv4(), role: 'model', content: msg });
+        else
+            msg = newMessages[newMessages.length - 1].content + " ";
 
         setMessages(newMessages);
 
-        const messageId = uuidv4();
         const response = await fetch("/api/chat", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -398,6 +401,17 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         await onMessagesUpdate(messageId, 'model', msg, workspace.id, "");
         setNewAiMessage("");
         setLoading(false);
+    }
+
+    const addTextToLastMessage = (text: string) => {
+        setMessages((prev) => {
+            const lastMessage = prev[prev.length - 1];
+            if (lastMessage) {
+                lastMessage.content += text;
+                return [...prev.slice(0, -1), lastMessage];
+            }
+            return prev;
+        });
     }
 
     const handleFork = async () => {
