@@ -352,20 +352,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
         setLoading(true);
         let msg = "";
 
-        // if (latestUrl != "") {
-        //     setAction("Scraping the Url");
-        //     const scrapedData = await scrapeFromUrl(latestUrl, messages[messages.length - 1].content, workspace.id);
-        //     if (scrapedData.error) {
-        //         msg += 'Couldn\'t scrape the provided url.\n';
-        //     }
-        //     else {
-        //         setAction("Data scraped successfully");
-        //         msg += `Url (${latestUrl}) scraped successfully.\n`;
-        //     }
-        //     setLatestUrl("");
-        //     setAction("");
-        // }
-
         let newMessages = messages;
         newMessages.push({ id: uuidv4(), role: 'model', content: msg });
 
