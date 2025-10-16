@@ -1,4 +1,4 @@
-import { ActionType, DeleteAction, FileAction, ProxyAction, ProxyActionData, ProxyRegexData, RenameAction, ShellAction, SupabaseAction } from "./types";
+import { ActionType, DeleteAction as DeleteTool, FileAction, ProxyAction, ProxyActionData, ProxyRegexData, RenameAction, ShellAction, SupabaseAction as SupabaseTool } from "./types";
 
 
 const REGEX_TAG_OPEN = '<proxyRegex';
@@ -293,7 +293,7 @@ export class StreamingMessageParser {
                 throw new Error(`Invalid Supabase operation: ${operation}`);
             }
 
-            (actionAttributes as SupabaseAction).operation = operation as 'migration' | 'query';
+            (actionAttributes as SupabaseTool).operation = operation as 'migration' | 'query';
 
             if (operation === 'migration') {
                 const filePath = this.#extractAttribute(actionTag, 'filePath');
@@ -303,7 +303,7 @@ export class StreamingMessageParser {
                     throw new Error('Migration requires a filePath');
                 }
 
-                (actionAttributes as SupabaseAction).filePath = filePath;
+                (actionAttributes as SupabaseTool).filePath = filePath;
             }
         } else if (actionType === 'delete') {
             const filePath = this.#extractAttribute(actionTag, 'filePath');
@@ -312,7 +312,7 @@ export class StreamingMessageParser {
                 throw new Error('Delete action requires a filePath');
             }
 
-            (actionAttributes as DeleteAction).filePath = filePath;
+            (actionAttributes as DeleteTool).filePath = filePath;
         } else if (actionType === 'rename') {
             const filePath = this.#extractAttribute(actionTag, 'filePath');
             const newFilePath = this.#extractAttribute(actionTag, 'newFilePath');

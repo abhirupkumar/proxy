@@ -4,7 +4,7 @@ import { env } from 'env';
 import { agentTools } from '@/data/functions-schema';
 
 const google = createGoogleGenerativeAI({
-  apiKey: env.GOOGLE_API_KEY,
+  apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
 });
 
 export const geminiModel = google('gemini-1.5-flash');

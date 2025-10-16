@@ -4,7 +4,7 @@ interface Env {
     CLERK_SECRET_KEY: string,
     NEXT_PUBLIC_HOST: string,
     GROQ_AI_KEY: string,
-    GOOGLE_API_KEY: string,
+    GOOGLE_GENERATIVE_AI_API_KEY: string,
     OPENAI_API_KEY: string,
 
     NODE_ENV: string,
