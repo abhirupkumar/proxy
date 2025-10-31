@@ -174,9 +174,6 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
     const messageParser = new StreamingMessageParser({
         callbacks: {
             onRegexOpen: (data) => {
-                setAction("Generating Response");
-            },
-            onRegexClose: (data) => {
                 if (workspaceData.artifactId == "proxy-web-app") {
                     onIdAndTitleUpdate(workspace.id, data.title, data.id);
                     setWorkspaceData({
@@ -185,6 +182,9 @@ const WorkspacePage = ({ dbUser, workspace, initialSupabaseData }: { dbUser: any
                         artifactId: data.id
                     })
                 }
+                setAction("Generating Response");
+            },
+            onRegexClose: (data) => {
                 setAction("");
             },
             onActionOpen: (data) => {
